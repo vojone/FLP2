@@ -132,9 +132,8 @@ slice(I, N, [_|T], S) :- I > 0, NI is I - 1, slice(NI, N, T, S).
 % Rotation of level in cube by 90° clockwise
 rotate_hlevel_cv(C, LI, RC) :-
     cube_size(SIZE),
-    cube_max_i(MAX_I),
     side_num(SIDE_NUM),
-    I is MAX_I * LI,
+    I is SIZE * LI,
     START_SIDE_I is SIDE_NUM - 1,
     END_SIDE_I is START_SIDE_I + SIDE_NUM - 1,
     findall(S,
