@@ -105,6 +105,28 @@ front_col_top(OFFSET, SIDE_INDECES) :-
     reverse(SIDE_INDECES_, SIDE_INDECES).
 
 
+side_col_top(OFFSET, SIDE_INDECES) :-
+    side_num(SIDE_NUM),
+    round_side_num(ROUND_SIDE_NUM),
+    START_I is 0,
+    END_I is ROUND_SIDE_NUM - 1,
+    findall(I,
+        (
+            between(START_I, END_I, I_),
+            X is (I_ + OFFSET) mod ROUND_SIDE_NUM,
+            ODD_ALT is ((X mod 2) * (SIDE_NUM - (SIDE_NUM - X) div 2)),
+            EVENT_ALT is ((X + 1) mod 2) * (X + 1),
+            I is ODD_ALT + EVENT_ALT
+        ), SIDE_INDECES).
+
+
+side_col_bot(OFFSET, SIDE_INDECES) :-
+    round_side_num(ROUND_SIDE_NUM),
+    OFFSET_REV is ROUND_SIDE_NUM - OFFSET + 1,
+    side_col_top(OFFSET_REV, SIDE_INDECES_),
+    reverse(SIDE_INDECES_, SIDE_INDECES).
+
+
 hlevel_cv(OFFSET, SIDE_INDECES) :-
     round_side_num(ROUND_SIDE_NUM),
     START_I is 0,
@@ -192,10 +214,10 @@ rotate_front_col_to_top(C, CI, RC) :-
     rotate(C, front_col_top(-1), front_col_top(0), copy_col(CI), RC).
 
 
-rotate_front_col_to_bot(C, CI, RC) :-
-    rotate(C, front_col_bot(-1), front_col_bot(0), copy_col(CI), RC).
+rotate_side_col_to_bot(C, CI, RC) :-
+    rotate(C, side_col_bot(-1), side_col_bot(0), copy_col(CI), RC).
 
-rotate_front_col_to_top(C, CI, RC) :-
-    rotate(C, front_col_top(-1), front_col_top(0), copy_col(CI), RC).
+rotate_side_col_to_top(C, CI, RC) :-
+    rotate(C, side_col_top(-1), side_col_top(0), copy_col(CI), RC).
 
 
