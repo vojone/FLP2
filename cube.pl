@@ -9,6 +9,15 @@ cube(C) :- C = [
         [45, 46, 47, 48, 49, 50, 51, 52, 53]
     ].
 
+done_cube(C) :- C = [
+        [1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1]
+    ].
+
 % Cube side size
 cube_size(3).
 
@@ -29,6 +38,13 @@ cube_max_i(I) :-
     I is SIDE - 1.
 
 
+
+onecolor([]) :- !.
+onecolor([_]) :- !.
+onecolor([H1,H2|T]) :- H1 = H2, onecolor([H2|T]).
+
+cube_done([]) :- !. 
+cube_done([H|T]) :- onecolor(H), cube_done(T).
 
 
 replace(_, [], _, _) :- !.
