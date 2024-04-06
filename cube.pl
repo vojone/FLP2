@@ -1,42 +1,7 @@
-% cube(C) :- C = [
-%         [
-%             [2, 2, 5],
-%             [1, 1, 5],
-%             [1, 1, 5]
-%         ],
-%         [
-%             [3, 2, 2],
-%             [3, 2, 2],
-%             [3, 2, 2]
-%         ],
-%         [
-%             [6, 4, 4],
-%             [6, 3, 3],
-%             [6, 3, 3]
-%         ],
-%         [
-%             [1, 1, 1],
-%             [4, 4, 4],
-%             [4, 4, 4]
-%         ],
-%         [
-%             [5, 5, 3],
-%             [5, 5, 3],
-%             [5, 5, 4]
-%         ],
-%         [
-%             [6, 6, 2],
-%             [6, 6, 1],
-%             [6, 6, 1]
-%         ]
-%     ].
 
-% set_prolog_flag(answer_write_options,[max_depth(0)]).
-
+% The mock cube for the testing
 cube(C) :- C = [
-        [0 , 1 , 2 , 
-         3 , 4 , 5 , 
-         6 , 7 , 8 ],
+        [0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 ],
         [9 , 10, 11, 12, 13, 14, 15, 16, 17],
         [18, 19, 20, 21, 22, 23, 24, 25, 26],
         [27, 28, 29, 30, 31, 32, 33, 34, 35],
@@ -44,6 +9,7 @@ cube(C) :- C = [
         [45, 46, 47, 48, 49, 50, 51, 52, 53]
     ].
 
+% Cube side size
 cube_size(3).
 
 
@@ -62,22 +28,8 @@ cube_max_i(I) :-
     cube_size(SIDE),
     I is SIDE - 1.
 
-% cube_rotate_top_cw(C, NC) :- .
 
-% rotate90([[H|T]|TT], [[H]|RMT]) :- .
 
-% last([H], H) :- !.
-% last([_|T], Last) :- last(T, Last). 
-
-% shift_listr([H], [], H) :- !.
-% shift_listr([H|T], [H|NT], Last) :- shift_listr(T, NT, Last).
-
-% shift_listl([H], H, []) :- !.
-% shift_listl([H|T], H, [NH|NT]) :- shift_listl(T, NH, NT).
-
-% rotate_listr(L, [Last|NL]) :- shift_listr(L, NL, Last).
-
-% rotate_listl(L, NL) :- shift_listl(L, NH, NT), append(NT, [NH], NL).
 
 replace(_, [], _, _) :- !.
 replace(I, N, [_|T], NL) :- I = 0, NL = [N|T], !.
@@ -87,20 +39,6 @@ replace(I, N, [H|T], [H|NT]) :- I > 0, NI is I - 1, replace(NI, N, T, NT).
 setv([], _, _, []) :- !.
 setv([_|T], I, V, [V|T]) :- I = 0, !.
 setv([H|T], I, V, [H|NT]) :- I > 0, NI is I - 1, setv(T, NI, V, NT).
-
-
-column_indeces(CI, I) :-
-    cube_size(SIZE),
-    cube_max_i(MAX_I),
-    between(0, MAX_I, X),
-    I is CI + X * SIZE.
-
-
-
-column(S, CI, COL_VALUES) :-
-    findall(V, (column_indeces(CI, I), nth0(I, S, V)), COL_VALUES).
-
-
 
 
 
@@ -121,6 +59,30 @@ between_rev(HIGH, LOW, X) :- between(LOW, HIGH, X_), X is HIGH - X_ + LOW.
 
 
 element(S, CI, RI, E) :- cube_size(SIDE), I is CI + RI * SIDE, nth0(I, S, E).
+
+
+replace_by_list(_, _, [], []) :- !.
+replace_by_list(_, [], L, L) :- !.
+replace_by_list(I, [NH|NT], [_|T], NL) :- I = 0, replace_by_list(0, NT, T, NLT), NL = [NH|NLT], !.
+replace_by_list(I, N, [H|T], [H|NT]) :- I > 0, NI is I - 1, replace_by_list(NI, N, T, NT).
+
+
+slice(_, _, [], []) :- !.
+slice(I, N, _, []) :- I = 0, N = 0, !.
+slice(I, N, [H|LT], [H|ST]) :- I = 0, N > 0, NN is N - 1, slice(0, NN, LT, ST), !.
+slice(I, N, [_|T], S) :- I > 0, NI is I - 1, slice(NI, N, T, S).
+
+
+column_indeces(CI, I) :-
+    cube_size(SIZE),
+    cube_max_i(MAX_I),
+    between(0, MAX_I, X),
+    I is CI + X * SIZE.
+
+
+
+column(S, CI, COL_VALUES) :-
+    findall(V, (column_indeces(CI, I), nth0(I, S, V)), COL_VALUES).
 
 
 front_col_bot(OFFSET, SIDE_INDECES) :-
@@ -188,17 +150,6 @@ rotate_side_ccw(S, RS) :-
         ), RS).
 
 
-replace_by_list(_, _, [], []) :- !.
-replace_by_list(_, [], L, L) :- !.
-replace_by_list(I, [NH|NT], [_|T], NL) :- I = 0, replace_by_list(0, NT, T, NLT), NL = [NH|NLT], !.
-replace_by_list(I, N, [H|T], [H|NT]) :- I > 0, NI is I - 1, replace_by_list(NI, N, T, NT).
-
-slice(_, _, [], []) :- !.
-slice(I, N, _, []) :- I = 0, N = 0, !.
-slice(I, N, [H|LT], [H|ST]) :- I = 0, N > 0, NN is N - 1, slice(0, NN, LT, ST), !.
-slice(I, N, [_|T], S) :- I > 0, NI is I - 1, slice(NI, N, T, S).
-
-
 copy_row(RI, SRC_SIDE, DST_SIDE, NS) :-
     cube_size(SIZE),
     I is SIZE * RI,
@@ -211,7 +162,7 @@ copy_col(CI, SRC_SIDE, DST_SIDE, NS) :-
     set_column(DST_SIDE, CI, VALUES, NS).
 
 
-rotate_hlevel(C, RI, DST_GEN, SRC_GEN, RC) :-
+rotate(C, DST_GEN, SRC_GEN, COPY, RC) :-
     round_side_num(ROUND_SIDE_NUM),
     call(DST_GEN, SRC_SIDE_INDECES),
     call(SRC_GEN, DST_SIDE_INDECES),
@@ -222,83 +173,29 @@ rotate_hlevel(C, RI, DST_GEN, SRC_GEN, RC) :-
             nth0(I, DST_SIDE_INDECES, DST_SIDE_I),
             nth0(SRC_SIDE_I, C, SRC_SIDE),
             nth0(DST_SIDE_I, C, DST_SIDE),
-            copy_row(RI, SRC_SIDE, DST_SIDE, S)
+            call(COPY, SRC_SIDE, DST_SIDE, S)
         ), SIDES),
     msetv(C, DST_SIDE_INDECES, SIDES, RC).
 
 
 rotate_hlevel_cv(C, RI, RC) :-
-    rotate_hlevel(C, RI, hlevel_cv(-1), hlevel_cv(0), RC).
+    rotate(C, hlevel_cv(-1), hlevel_cv(0), copy_row(RI), RC).
 
 rotate_hlevel_ccv(C, RI, RC) :-
-    rotate_hlevel(C, RI, hlevel_ccv(-1), hlevel_ccv(0), RC).
-
-% Rotation of level in cube by 90° clockwise
-% rotate_hlevel_cv(C, RI, RC) :-
-%     round_side_num(ROUND_SIDE_NUM),
-%     hlevel_cv(-1, SRC_SIDE_INDECES),
-%     hlevel_cv(0, DST_SIDE_INDECES),
-%     findall(S,
-%         (
-%             between(0, ROUND_SIDE_NUM, I),
-%             nth0(I, SRC_SIDE_INDECES, SRC_SIDE_I),
-%             nth0(I, DST_SIDE_INDECES, DST_SIDE_I),
-%             nth0(SRC_SIDE_I, C, SRC_SIDE),
-%             nth0(DST_SIDE_I, C, DST_SIDE),
-%             copy_row(RI, SRC_SIDE, DST_SIDE, S)
-%         ), SIDES),
-%     msetv(C, DST_SIDE_INDECES, SIDES, RC).
+    rotate(C, hlevel_ccv(-1), hlevel_ccv(0), copy_row(RI), RC).
 
 
-% rotate_hlevel_ccv(C, RI, RC) :-
-%     round_side_num(ROUND_SIDE_NUM),
-%     hlevel_ccv(-1, SRC_SIDE_INDECES),
-%     hlevel_ccv(0, DST_SIDE_INDECES),
-%     findall(S,
-%         (
-%             between(0, ROUND_SIDE_NUM, I),
-%             nth0(I, SRC_SIDE_INDECES, SRC_SIDE_I),
-%             nth0(I, DST_SIDE_INDECES, DST_SIDE_I),
-%             nth0(SRC_SIDE_I, C, SRC_SIDE),
-%             nth0(DST_SIDE_I, C, DST_SIDE),
-%             copy_row(RI, SRC_SIDE, DST_SIDE, S)
-%         ), SIDES),
-%     msetv(C, DST_SIDE_INDECES, SIDES, RC).
+rotate_front_col_to_bot(C, CI, RC) :-
+    rotate(C, front_col_bot(-1), front_col_bot(0), copy_col(CI), RC).
+
+rotate_front_col_to_top(C, CI, RC) :-
+    rotate(C, front_col_top(-1), front_col_top(0), copy_col(CI), RC).
 
 
-rotate_front_column_to_bot(C, CI, RC) :-
-    round_side_num(ROUND_SIDE_NUM),
-    front_col_bot(-1, SRC_SIDE_INDECES),
-    front_col_bot(0, DST_SIDE_INDECES),
-    findall(S,
-        (
-            between(0, ROUND_SIDE_NUM, I),
-            nth0(I, SRC_SIDE_INDECES, SRC_SIDE_I),
-            nth0(I, DST_SIDE_INDECES, DST_SIDE_I),
-            nth0(SRC_SIDE_I, C, SRC_SIDE),
-            nth0(DST_SIDE_I, C, DST_SIDE),
-            copy_col(CI, SRC_SIDE, DST_SIDE, S)
-        ), SIDES),
-    msetv(C, DST_SIDE_INDECES, SIDES, RC).
-    
+rotate_front_col_to_bot(C, CI, RC) :-
+    rotate(C, front_col_bot(-1), front_col_bot(0), copy_col(CI), RC).
 
-rotate_front_column_to_top(C, CI, RC) :-
-    round_side_num(ROUND_SIDE_NUM),
-    front_col_top(0, SRC_SIDE_INDECES),
-    front_col_top(1, DST_SIDE_INDECES),
-    findall(S,
-        (
-            between(0, ROUND_SIDE_NUM, I),
-            nth0(I, SRC_SIDE_INDECES, SRC_SIDE_I),
-            nth0(I, DST_SIDE_INDECES, DST_SIDE_I),
-            nth0(SRC_SIDE_I, C, SRC_SIDE),
-            nth0(DST_SIDE_I, C, DST_SIDE),
-            copy_col(CI, SRC_SIDE, DST_SIDE, S)
-        ), SIDES),
-    msetv(C, DST_SIDE_INDECES, SIDES, RC).
-
-% res(X) :- cube(C), nth0(8, C, X).
-
-% cube_alt(C) :- C = [12321321221211111111111111111111111111111111111].
+rotate_front_col_to_top(C, CI, RC) :-
+    rotate(C, front_col_top(-1), front_col_top(0), copy_col(CI), RC).
 
 
