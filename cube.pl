@@ -36,7 +36,7 @@ line2row([H|T], I, NLT, [H|RT]) :-
 line2row(L, NL, R) :- line2row(L, 0, NL, R).
 
 
-lines2side(_, I, [], []) :- cube_size(SIZE), I = SIZE, !.
+lines2side(L, I, L, []) :- cube_size(SIZE), I = SIZE, !.
 lines2side([H|T], I, [REM|NL], [NR|ST]) :-
     cube_size(SIZE),
     I < SIZE,
@@ -49,17 +49,48 @@ lines2side(L, NL, SIDE) :-
     flatten(SIDE_, SIDE).
 
 
+pop_empty_lines([], I, []) :- I = 0, !.
 pop_empty_lines(L, I, L) :- cube_size(SIZE), I = SIZE, !.
 pop_empty_lines([[]|T], I, NT) :-
     cube_size(SIZE), I < SIZE, NI is I + 1, !, pop_empty_lines(T, NI, NT).
 pop_empty_lines(L, NL) :-
     pop_empty_lines(L, 0, NL).
 
-% lines_to_cube([[],[],[]|L], L, C) :-
+skip_whitespace([], I, []) :- I = 0, !.
+%pop_empty_lines([[]|T], I, [[]|T]) :- I = 0, !.
+skip_whitespace(L, I, L) :- cube_size(SIZE), I = SIZE, !.
+skip_whitespace([[H|T]|TT], I, [T|NT]) :-
+    cube_size(SIZE), I < SIZE, NI is I + 1, H = ' ', !, skip_whitespace(TT, NI, NT).
+skip_whitespace(L, NL) :-
+    skip_whitespace(L, 0, NL).
 
-% lines_to_cube([H1,H2,H3|L], C) :- lines_to_side(H1, H2, H3, S)
+lines2cube(L, I, NL, [SIDE]) :-
+    round_side_num(ROUND_SIDE_NUM),
+    I =:= ROUND_SIDE_NUM - 1, !,
+    lines2side(L, NL, SIDE).
+lines2cube(L, I, NNNL, [SIDE|ST]) :-
+    round_side_num(ROUND_SIDE_NUM),
+    I < ROUND_SIDE_NUM, !,
+    NI is I + 1,
+    lines2side(L, NL, SIDE),
+    skip_whitespace(NL, NNL),
+    lines2cube(NNL, NI, NNNL, ST).
 
-% read_cube(L) :- read_lines2(L, 9).
+lines2cube(L, REM, C) :-
+    lines2side(L, L_, TOP_SIDE),
+    pop_empty_lines(L_, NL),
+    lines2cube(NL, 0, NNL, SIDES),
+    pop_empty_lines(NNL, NNNL),
+    lines2side(NNNL, NNNNL, BOT_SIDE),
+    pop_empty_lines(NNNNL, REM),
+    append(SIDES, [TOP_SIDE], C_),
+    append(C_, [BOT_SIDE], C).
+
+read_cube(C, NL) :-
+    cube_size(SIZE),
+    EXP_LINES is SIZE * SIZE,
+    read_lines2(L, EXP_LINES),
+    lines2cube(L, NL, C).
 
 
 % The mock cube for the testing
