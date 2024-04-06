@@ -1,4 +1,67 @@
 
+/*** The following code was taken from input2.pl, autor: Martin Hyrs **/
+
+/** testuje znak na EOF nebo LF */
+isEOFEOL(C) :-
+	C == end_of_file;
+	(char_code(C,Code), Code==10).
+
+/** cte radky ze standardniho vstupu, konci na LF nebo EOF */
+read_line(L,C) :-
+	get_char(C),
+	(isEOFEOL(C), L = [], !;
+		read_line(LL,_),% atom_codes(C,[Cd]),
+		[C|LL] = L).
+
+
+/** nacte zadany pocet radku */
+read_lines2([],0).
+read_lines2(Ls,N) :-
+	N > 0,
+	read_line(L,_),
+	N1 is N-1,
+	read_lines2(LLs, N1),
+	Ls = [L|LLs].
+
+
+
+/** End of part taken from input2.pl **/
+
+line2row(L, I, L, []) :- cube_size(SIZE), I = SIZE, !.
+line2row([H|T], I, NLT, [H|RT]) :-
+    cube_size(SIZE),
+    I < SIZE, !,
+    NI is I + 1,
+    line2row(T, NI, NLT, RT).
+line2row(L, NL, R) :- line2row(L, 0, NL, R).
+
+
+lines2side(_, I, [], []) :- cube_size(SIZE), I = SIZE, !.
+lines2side([H|T], I, [REM|NL], [NR|ST]) :-
+    cube_size(SIZE),
+    I < SIZE,
+    line2row(H, REM, NR),
+    NI is I + 1,
+    lines2side(T, NI, NL, ST).
+
+lines2side(L, NL, SIDE) :-
+    lines2side(L, 0, NL, SIDE_),
+    flatten(SIDE_, SIDE).
+
+
+pop_empty_lines(L, I, L) :- cube_size(SIZE), I = SIZE, !.
+pop_empty_lines([[]|T], I, NT) :-
+    cube_size(SIZE), I < SIZE, NI is I + 1, !, pop_empty_lines(T, NI, NT).
+pop_empty_lines(L, NL) :-
+    pop_empty_lines(L, 0, NL).
+
+% lines_to_cube([[],[],[]|L], L, C) :-
+
+% lines_to_cube([H1,H2,H3|L], C) :- lines_to_side(H1, H2, H3, S)
+
+% read_cube(L) :- read_lines2(L, 9).
+
+
 % The mock cube for the testing
 cube(C) :- C = [
         [0 , 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 ],
