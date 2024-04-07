@@ -104,10 +104,10 @@ cube(C) :- C = [
     ].
 
 cube_s(C) :- C = [
-        [4, 4, 4, 1, 1, 1, 2, 2, 2],
-        [1, 1, 1, 2, 2, 2, 3, 3, 3],
-        [2, 2, 2, 3, 3, 3, 4, 4, 4],
-        [3, 3, 3, 4, 4, 4, 1, 1, 1],
+        [4, 4, 4, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 2, 2, 2, 2, 2, 2],
+        [2, 2, 2, 3, 3, 3, 3, 3, 3],
+        [3, 3, 3, 4, 4, 4, 4, 4, 4],
         [5, 5, 5, 5, 5, 5, 5, 5, 5],
         [6, 6, 6, 6, 6, 6, 6, 6, 6]
     ].
@@ -307,9 +307,10 @@ rotate(C, DST_GEN, SRC_GEN, COPY, RC) :-
     round_side_num(ROUND_SIDE_NUM),
     call(DST_GEN, SRC_SIDE_INDECES),
     call(SRC_GEN, DST_SIDE_INDECES),
+    ROUND_SIDE_NUM_ is ROUND_SIDE_NUM - 1,
     findall(S,
         (
-            between(0, ROUND_SIDE_NUM, I),
+            between(0, ROUND_SIDE_NUM_, I),
             nth0(I, SRC_SIDE_INDECES, SRC_SIDE_I),
             nth0(I, DST_SIDE_INDECES, DST_SIDE_I),
             nth0(SRC_SIDE_I, C, SRC_SIDE),
@@ -355,36 +356,36 @@ rotate_cube_side_ccw(C, SIDE_I, RC) :-
 check_moves(_, []) :- !.
 check_moves(M, [H|_]) :- ((M = H) -> false; true).
 
-move_u_cw(C, M, [u|M], RC) :-
+move_u_cw(C, M, I, [(u, I)|M], RC) :-
     top(TOP_I),
     rotate_cube_side_cw(C, TOP_I, RC_),
     rotate_hlevel_cw(RC_, 0, RC).
-move_u_ccw(C, M, [uc|M], RC) :-
+move_u_ccw(C, M, I, [(uc:I)|M], RC) :-
     top(TOP_I),
     rotate_cube_side_ccw(C, TOP_I, RC_),
     rotate_hlevel_ccw(RC_, 0, RC).
 
 
-move_d_cw(C, M, [d|M], RC) :-
+move_d_cw(C, M, I, [(d, I)|M], RC) :-
     cube_size(SIZE),
     RI is SIZE - 1,
     bot(BOT_I),
     rotate_cube_side_cw(C, BOT_I, RC_),
     rotate_hlevel_cw(RC_, RI, RC).
-move_d_ccw(C, M, [dc|M], RC) :-
+move_d_ccw(C, M, I, [(dc, I)|M], RC) :-
     cube_size(SIZE),
     RI is SIZE - 1,
     bot(BOT_I),
     rotate_cube_side_ccw(C, BOT_I, RC_),
     rotate_hlevel_ccw(RC_, RI, RC).
 
-move_r_cw(C, M, [r|M], RC) :-
+move_r_cw(C, M, I, [(r, I)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     right(RIGHT_I),
     rotate_cube_side_cw(C, RIGHT_I, RC_),
     rotate_front_col_to_top(RC_, CI, RC).
-move_r_ccw(C, M, [rc|M], RC) :-
+move_r_ccw(C, M, I, [(rc, I)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     right(RIGHT_I),
@@ -392,33 +393,33 @@ move_r_ccw(C, M, [rc|M], RC) :-
     rotate_front_col_to_bot(RC_, CI, RC).
 
 
-move_l_cw(C, M, [l|M], RC) :-
+move_l_cw(C, M, I, [(l, I)|M], RC) :-
     left(LEFT_I),
     rotate_cube_side_cw(C, LEFT_I, RC_),
     rotate_front_col_to_bot(RC_, 0, RC).
-move_l_ccw(C, M, [lc|M], RC) :-
+move_l_ccw(C, M, I, [(l, I)|M], RC) :-
     left(LEFT_I),
     rotate_cube_side_ccw(C, LEFT_I, RC_),
     rotate_front_col_to_top(RC_, 0, RC).
 
 
-move_f_cw(C, M, [f|M], RC) :-
+move_f_cw(C, M, I, [(f, I)|M], RC) :-
     front(FRONT_I),
     rotate_cube_side_cw(C, FRONT_I, RC_),
     rotate_side_col_to_bot(RC_, 0, RC).
-move_f_ccw(C, M, [fc|M], RC) :-
+move_f_ccw(C, M, I, [(fc, I)|M], RC) :-
     front(FRONT_I),
     rotate_cube_side_ccw(C, FRONT_I, RC_),
     rotate_side_col_to_top(RC_, 0, RC).
 
 
-move_b_cw(C, M, [b|M], RC) :-
+move_b_cw(C, M, I, [(b, I)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     front(BACK_I),
     rotate_cube_side_cw(C, BACK_I, RC_),
     rotate_side_col_to_top(RC_, CI, RC).
-move_b_ccw(C, M, [bc|M], RC) :-
+move_b_ccw(C, M, I, [(bc, I)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     front(BACK_I),
@@ -426,33 +427,43 @@ move_b_ccw(C, M, [bc|M], RC) :-
     rotate_side_col_to_bot(RC_, CI, RC).
 
 
-add_state(C) :- asserta(cube_state(_, C)).
+add_state(C, I, NI) :- asserta(cube_state(C, I)), NI is I + 1.
 
-check_state(C) :- cube_state(C, C), !, false.
+check_state(C) :- cube_state(C, _), !, false.
 check_state(_) :- true.
 
+delete_states :- retractall(cube_state(_, _)).
+
 nonopt(_, _, _, I) :- I = 0, !.
-nonopt(M, NON_CONF, [H|T], I) :- memberchk(H, NON_CONF), !, nonopt(M, NON_CONF, T, I).
-nonopt(M, NON_CONF, [H|T], I) :- M = H, I > 0, NI is I - 1, nonopt(M, NON_CONF, T, NI).
+nonopt(M, NON_CONF, [(H, _)|T], I) :- memberchk(H, NON_CONF), !, nonopt(M, NON_CONF, T, I).
+nonopt(M, NON_CONF, [(H, _)|T], I) :- M = H, I > 0, NI is I - 1, nonopt(M, NON_CONF, T, NI).
 nonopt(M, NON_CONF, ML) :- nonopt(M, NON_CONF, ML, 3).
 
 popn(_, N, L, L) :- N = 0, !.
-popn(M, N, [H|T], [H|NT]) :- M \= H, !, popn(M, N, T, NT).
-popn(M, N, [H|T], NT) :- M = H, N > 0, NN is N - 1, popn(M, NN, T, NT).
+popn(M, N, [(H, I)|T], [(H, I)|NT]) :- M \= H, !, popn(M, N, T, NT).
+popn(M, N, [(H, _)|T], NT) :- M = H, N > 0, NN is N - 1, popn(M, NN, T, NT).
 
 
-optimize(M, NON_CONF, NM, ML, OM) :- nonopt(M, NON_CONF, ML), !, popn(M, 3, ML, OM_), OM = [NM|OM_].
-optimize(_, _, _, ML, ML) :- !.
+optimize(M, NON_CONF, NM, I, ML, OM) :- nonopt(M, NON_CONF, ML), !, popn(M, 3, ML, OM_), OM = [(NM, I)|OM_].
+optimize(_, _, _, _, ML, ML) :- !.
 
 
-move(C, M, M, C) :- cube_done(C), !.
-move(C, M, RM, RC) :- move_u_cw(C, M, M_, RC_), check_state(RC_), optimize(u, [d, dc], uc, M_, NM_), add_state(RC_), move(RC_, NM_, RM, RC).
-move(C, M, RM, RC) :- move_d_cw(C, M, M_, RC_), check_state(RC_), optimize(d, [u, uc], dc, M_, NM_), add_state(RC_), move(RC_, NM_, RM, RC).
+move(C, M, I, M, C, I, _) :- cube_done(C), !.
+move(C, M, I, RM, RC, RI, D) :- D > 0, move_u_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
+move(C, M, I, RM, RC, RI, D) :- D > 0, move_u_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
+% move(C, M, I, RM, RC, RI, D) :- D > 0, move_d_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
+% move(C, M, I, RM, RC, RI, D) :- D > 0, move_d_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
+% move(C, M, I, RM, RC, RI, D) :- D > 0, move_r_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
+% move(C, M, I, RM, RC, RI, D) :- D > 0, move_r_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
+% move(C, M, I, RM, RC, RI, D) :- D > 0, move_l_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
+% move(C, M, I, RM, RC, RI, D) :- D > 0, move_l_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), move(RC_, M_, I_, RM, RC, RI, ND).
 
-solve(RC, RM) :-
+move_all(C, I, RM, RC, RI, D) :- move(C, [], I, RM, RC, RI, D); delete_states, ND is D + 1, move_all(C, I, RM, RC, RI, ND).
+
+solve(RC, RM, RI) :-
     cube_s(C),
-    add_state(C),
-    move(C, [], RM, RC).
+    add_state(C, 0, NI),
+    move_all(C, NI, RM, RC, RI, 0).
 
 % 555
 % 555
