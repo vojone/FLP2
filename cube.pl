@@ -104,10 +104,10 @@ cube(C) :- C = [
     ].
 
 cube_s(C) :- C = [
-        [4,4,4, 1, 1, 1, 1, 1, 1],
-        [1,1,1, 2, 2, 2, 2, 2, 2],
-        [2,2,2, 3, 3, 3, 3, 3, 3],
-        [3,3,3, 4, 4, 4, 4, 4, 4],
+        [4, 4, 4, 1, 1, 1, 2, 2, 2],
+        [1, 1, 1, 2, 2, 2, 3, 3, 3],
+        [2, 2, 2, 3, 3, 3, 4, 4, 4],
+        [3, 3, 3, 4, 4, 4, 1, 1, 1],
         [5, 5, 5, 5, 5, 5, 5, 5, 5],
         [6, 6, 6, 6, 6, 6, 6, 6, 6]
     ].
@@ -353,8 +353,7 @@ rotate_cube_side_ccw(C, SIDE_I, RC) :-
 
 
 check_moves(_, []) :- !.
-check_moves(_, [_]) :- !.
-check_moves(M, [H1,H2|_]) :- ((M = H1, M = H2) -> false; true).
+check_moves(M, [H|_]) :- ((M = H) -> false; true).
 
 move_u_cw(C, M, [u|M], RC) :-
     top(TOP_I),
@@ -427,16 +426,28 @@ move_b_ccw(C, M, [bc|M], RC) :-
     rotate_side_col_to_bot(RC_, CI, RC).
 
 
-add_state(C) :- asserta(cube_state(NC, C)).
+add_state(C) :- asserta(cube_state(_, C)).
 
 check_state(C) :- cube_state(C, C), !, false.
 check_state(_) :- true.
 
+nonopt(_, _, _, I) :- I = 0, !.
+nonopt(M, NON_CONF, [H|T], I) :- memberchk(H, NON_CONF), !, nonopt(M, NON_CONF, T, I).
+nonopt(M, NON_CONF, [H|T], I) :- M = H, I > 0, NI is I - 1, nonopt(M, NON_CONF, T, NI).
+nonopt(M, NON_CONF, ML) :- nonopt(M, NON_CONF, ML, 3).
+
+popn(_, N, L, L) :- N = 0, !.
+popn(M, N, [H|T], [H|NT]) :- M \= H, !, popn(M, N, T, NT).
+popn(M, N, [H|T], NT) :- M = H, N > 0, NN is N - 1, popn(M, NN, T, NT).
+
+
+optimize(M, NON_CONF, NM, ML, OM) :- nonopt(M, NON_CONF, ML), !, popn(M, 3, ML, OM_), OM = [NM|OM_].
+optimize(_, _, _, ML, ML) :- !.
+
+
 move(C, M, M, C) :- cube_done(C), !.
-move(C, M, RM, RC) :- check_moves(u, M), move_u_cw(C, M, M_, RC_), check_state(RC_), add_state(RC_), move(RC_, M_, RM, RC).
-move(C, M, RM, RC) :- check_moves(uc, M), move_u_ccw(C, M, M_, RC_), check_state(RC_), add_state(RC_), move(RC_, M_, RM, RC).
-move(C, M, RM, RC) :- check_moves(d, M), move_d_cw(C, M, M_, RC_), check_state(RC_), add_state(RC_), move(RC_, M_, RM, RC).
-move(C, M, RM, RC) :- check_moves(dc, M), move_d_ccw(C, M, M_, RC_), check_state(RC_), add_state(RC_), move(RC_, M_, RM, RC).
+move(C, M, RM, RC) :- move_u_cw(C, M, M_, RC_), check_state(RC_), optimize(u, [d, dc], uc, M_, NM_), add_state(RC_), move(RC_, NM_, RM, RC).
+move(C, M, RM, RC) :- move_d_cw(C, M, M_, RC_), check_state(RC_), optimize(d, [u, uc], dc, M_, NM_), add_state(RC_), move(RC_, NM_, RM, RC).
 
 solve(RC, RM) :-
     cube_s(C),
