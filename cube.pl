@@ -237,7 +237,7 @@ side_col_bot(OFFSET, SIDE_INDECES) :-
     reverse(SIDE_INDECES_, SIDE_INDECES).
 
 
-hlevel_cv(OFFSET, SIDE_INDECES) :-
+hlevel_cw(OFFSET, SIDE_INDECES) :-
     round_side_num(ROUND_SIDE_NUM),
     START_I is 0,
     END_I is ROUND_SIDE_NUM - 1,
@@ -248,10 +248,10 @@ hlevel_cv(OFFSET, SIDE_INDECES) :-
         ), SIDE_INDECES).
 
 
-hlevel_ccv(OFFSET, SIDE_INDECES) :-
+hlevel_ccw(OFFSET, SIDE_INDECES) :-
     round_side_num(ROUND_SIDE_NUM),
     OFFSET_REV is ROUND_SIDE_NUM - OFFSET + 1,
-    hlevel_cv(OFFSET_REV, SIDE_INDECES_),
+    hlevel_cw(OFFSET_REV, SIDE_INDECES_),
     reverse(SIDE_INDECES_, SIDE_INDECES).
 
 
@@ -310,11 +310,11 @@ rotate(C, DST_GEN, SRC_GEN, COPY, RC) :-
     msetv(C, DST_SIDE_INDECES, SIDES, RC).
 
 
-rotate_hlevel_cv(C, RI, RC) :-
-    rotate(C, hlevel_cv(-1), hlevel_cv(0), copy_row(RI), RC).
+rotate_hlevel_cw(C, RI, RC) :-
+    rotate(C, hlevel_cw(-1), hlevel_cw(0), copy_row(RI), RC).
 
-rotate_hlevel_ccv(C, RI, RC) :-
-    rotate(C, hlevel_ccv(-1), hlevel_ccv(0), copy_row(RI), RC).
+rotate_hlevel_ccw(C, RI, RC) :-
+    rotate(C, hlevel_ccw(-1), hlevel_ccw(0), copy_row(RI), RC).
 
 
 rotate_front_col_to_bot(C, CI, RC) :-
@@ -331,3 +331,88 @@ rotate_side_col_to_top(C, CI, RC) :-
     rotate(C, side_col_top(-1), side_col_top(0), copy_col(CI), RC).
 
 
+rotate_cube_side_cw(C, SIDE_I, RC) :-
+    nth0(SIDE_I, C, SIDE),
+    rotate_side_cw(SIDE, RSIDE),
+    setv(C, SIDE_I, SIDE, RC).
+
+
+rotate_cube_side_ccw(C, SIDE_I, RC) :-
+    nth0(SIDE_I, C, SIDE),
+    rotate_side_ccw(SIDE, RSIDE),
+    setv(C, SIDE_I, SIDE, RC).
+
+
+move_u_cw(C, RC) :-
+    top(TOP_I),
+    rotate_cube_side_cw(C, TOP_I, RC_),
+    rotate_hlevel_cw(RC_, 0, RC).
+move_u_ccw(C, RC) :-
+    top(TOP_I),
+    rotate_cube_side_ccw(C, TOP_I, RC_),
+    rotate_hlevel_ccw(RC_, 0, RC).
+
+
+move_d_cw(C, RC) :-
+    cube_size(SIZE),
+    RI is SIZE - 1,
+    bot(BOT_I),
+    rotate_cube_side_cw(C, BOT_I, RC_),
+    rotate_hlevel_cw(RC_, RI, RC).
+move_d_ccw(C, RC) :-
+    cube_size(SIZE),
+    RI is SIZE - 1,
+    bot(BOT_I),
+    rotate_cube_side_ccw(C, BOT_I, RC_),
+    rotate_hlevel_ccw(RC_, RI, RC).
+
+move_r_cw(C, RC) :-
+    cube_size(SIZE),
+    CI is SIZE - 1,
+    right(RIGHT_I),
+    rotate_cube_side_cw(C, RIGHT_I, RC_),
+    rotate_front_col_to_top(RC_, CI, RC).
+move_r_ccw(C, RC) :-
+    cube_size(SIZE),
+    CI is SIZE - 1,
+    right(RIGHT_I),
+    rotate_cube_side_ccw(C, RIGHT_I, RC_),
+    rotate_front_col_to_bot(RC_, CI, RC).
+
+
+move_l_cw(C, RC) :-
+    cube_size(SIZE),
+    left(LEFT_I),
+    rotate_cube_side_cw(C, LEFT_I, RC_),
+    rotate_front_col_to_bot(RC_, 0, RC).
+move_l_ccw(C, RC) :-
+    cube_size(SIZE),
+    left(LEFT_I),
+    rotate_cube_side_ccw(C, LEFT_I, RC_),
+    rotate_front_col_to_top(RC_, 0, RC).
+
+
+move_f_cw(C, RC) :-
+    cube_size(SIZE),
+    front(FRONT_I),
+    rotate_cube_side_cw(C, FRONT_I, RC_),
+    rotate_side_col_to_bot(RC_, 0, RC).
+move_f_ccw(C, RC) :-
+    cube_size(SIZE),
+    front(FRONT_I),
+    rotate_cube_side_ccw(C, FRONT_I, RC_),
+    rotate_side_col_to_top(RC_, 0, RC).
+
+
+move_b_cw(C, RC) :-
+    cube_size(SIZE),
+    CI is SIZE - 1,
+    front(BACK_I),
+    rotate_cube_side_cw(C, BACK_I, RC_),
+    rotate_side_col_to_top(RC_, CI, RC).
+move_b_ccw(C, RC) :-
+    cube_size(SIZE),
+    CI is SIZE - 1,
+    front(BACK_I),
+    rotate_cube_side_ccw(C, BACK_I, RC_),
+    rotate_side_col_to_bot(RC_, CI, RC).
