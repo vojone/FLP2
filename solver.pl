@@ -53,10 +53,8 @@ solve_ids_step(C, M, RM, RC, D) :- move_s_ccw(C, M, M_, RC_), ND is D - 1, solve
 solve_ids(C, RM, RC, D, _) :- solve_ids_step(C, [], RM, RC, D), !.
 solve_ids(C, RM, RC, D, MD) :- D < MD, ND is D + 1, solve_ids(C, RM, RC, ND, MD).
 
-solve(RC, RM) :-
-    read_cube(CUBE, NL),
-    solve_ids(CUBE, RM, RC, 0, 5),
-    write_solution(RM).
+solve(CUBE, MOVES) :-
+    solve_ids(CUBE, MOVES, _, 0, 5).
 
 
 scramble(R______) :-
@@ -66,4 +64,6 @@ scramble(R______) :-
     move_m_cw(R____, _, _, R______).
 
 main(Argv) :-
-    solve(_, _).
+    read_cube(CUBE, NL),
+    solve(CUBE, MOVES),
+    write_solution(MOVES).
