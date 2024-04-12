@@ -22,275 +22,48 @@ done_cube(C) :- C = [
     ].
 
 
-add_state(C, 1) :- asserta(cube_state(C, 0)).
-add_state(C, I, NI) :- asserta(cube_state(C, I)), NI is I + 1.
 
-check_state(C) :- cube_state(C, _), !, false.
-check_state(_) :- true.
-
-clear_states :- retractall(cube_state(_, _)).
-
-init_state(C) :- cube_state(C, 0).
+write_solution_([]).
+write_solution_([(_, HCUBE)|TMOVES]) :- write_cube(HCUBE), write("\n"), write_solution_(TMOVES).
+write_solution(MOVES) :- reverse(MOVES, RMOVES), write_solution_(RMOVES).
 
 
-
-solve_ids_step(C, M, I, M, C, I, _) :- cube_done(C), !.
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_u_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_u_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_d_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_d_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_r_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_r_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_l_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_l_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_f_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_f_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_b_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_b_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_m_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_m_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_e_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_e_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_s_cw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-solve_ids_step(C, M, I, RM, RC, RI, D) :- D > 0, move_s_ccw(C, M, I, M_, RC_), check_state(RC_), ND is D - 1, add_state(RC_, I, I_), solve_ids_step(RC_, M_, I_, RM, RC, RI, ND).
-
-
-white_cross(CUBE) :- CUBE = [
-        [_,B,_,
-         _,B,_,
-         _,_,_],
-        [_,C,_,
-         _,C,_,
-         _,_,_],
-        [_,D,_,
-         _,D,_,
-         _,_,_],
-        [_,E,_,
-         _,E,_,
-         _,_,_],
-        [_,A,_,
-         A,A,A,
-         _,A,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_]
-    ].
+solve_ids_step(_, _, _, _, D) :-  D =< 0, !, false.
+solve_ids_step(C, M, M, C, _) :- cube_done(C), !.
+solve_ids_step(C, M, RM, RC, D) :- move_u_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_u_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_d_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_d_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_r_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_r_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_l_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_l_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_f_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_f_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_b_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_b_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_m_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_m_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_e_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_e_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_s_cw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
+solve_ids_step(C, M, RM, RC, D) :- move_s_ccw(C, M, M_, RC_), ND is D - 1, solve_ids_step(RC_, M_, RM, RC, ND).
 
 
-white_cross_sit1(C) :- C = [
-        [_,_,_,
-         _,A,A,
-         _,_,_],
-        [_,_,_,
-         B,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,B,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_]
-    ].
+solve_ids(C, RM, RC, D, _) :- solve_ids_step(C, [], RM, RC, D), !.
+solve_ids(C, RM, RC, D, MD) :- D < MD, ND is D + 1, solve_ids(C, RM, RC, ND, MD).
 
-white_cross_sit2(C) :- C = [
-        [_,_,_,
-         _,A,_,
-         _,A,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,B,_,
-         _,_,_],
-        [_,B,_,
-         _,_,_,
-         _,_,_]
-    ].
-
-white_cross_sit3(C) :- C = [
-        [_,_,_,
-         _,A,B,
-         _,_,_],
-        [_,_,_,
-         A,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,B,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_]
-    ].
-
-white_cross_sit4(C) :- C = [
-        [_,_,_,
-         _,A,_,
-         _,B,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,B,_,
-         _,_,_],
-        [_,A,_,
-         _,_,_,
-         _,_,_]
-    ].
-
-white_cross_sit5(C) :- C = [
-        [_,A,_,
-         _,B,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,A,_,
-         _,B,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_]
-    ].
-
-white_cross_sit6(C) :- C = [
-        [_,_,_,
-         A,A,_,
-         _,_,_],
-        [_,_,_,
-         _,_,B,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,B,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_]
-    ].
-
-
-
-white_cross_sit7(C) :- C = [
-        [_,_,_,
-         B,A,_,
-         _,_,_],
-        [_,_,_,
-         _,_,A,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_],
-        [_,_,_,
-         _,B,_,
-         _,_,_],
-        [_,_,_,
-         _,_,_,
-         _,_,_]
-    ].
-
-
-front_right(C, [R, B, L, F, T, BO]) :- C = [F, R, B, L, T, BO].
-front_back(C, [B, L, F, R, T, BO]) :- C = [F, R, B, L, T, BO].
-front_left(C, [L, F, R, B, T, BO]) :- C = [F, R, B, L, T, BO].
-
-move_seq(C, M, I, C, M, I, []).
-move_seq(C, M, I, RM, RC, RI, [HMOVE|TMOVES]) :-
-    RI_ is I + 1,
-    call(HMOVE, C, M, RI_, RM_, RC_),
-    move_seq(RC_, RM_, RI_, RM, RC, RI, TMOVES).
-
-% white_cross_sit4(C) :- CUBE = [
-%         [_,_,_,
-%          _,_,_,
-%          _,_,_],
-%         [_,_,_,
-%          _,_,_,
-%          _,_,_],
-%         [_,_,_,
-%          _,_,_,
-%          _,_,_],
-%         [_,_,_,
-%          _,_,_,
-%          _,_,_],
-%         [_,_,_,
-%          _,_,_,
-%          _,_,_],
-%         [_,_,_,
-%          _,_,_,
-%          _,_,_]
-%     ].
-
-solve_ids(C, I, RM, RC, RI, D) :-
-    solve_ids_step(C, [], I, RM, RC, RI, D);
-    init_state(IC),
-    clear_states,
-    add_state(IC, NI),
-    ND is D + 1,
-    solve_ids(C, NI, RM, RC, RI, ND).
-
-cube_fix(C, FC) :-
-    back(BACK_I),
-    left(LEFT_I),
-    rotate_cube_side_cw(C, BACK_I, C1),
-    rotate_cube_side_cw(C1, BACK_I, C2),
-    rotate_cube_side_cw(C2, LEFT_I, C3),
-    rotate_cube_side_cw(C3, LEFT_I, FC).
-
-solve(RC, RM, RI) :-
-    done_cube(C),
-    %scramble(FC),
-    %read_cube(FC, NL),
-    add_state(C, NI),
-    solve_ids(C, NI, RM, RC, RI, 0).
+solve(RC, RM) :-
+    read_cube(CUBE, NL),
+    solve_ids(CUBE, RM, RC, 0, 5),
+    write_solution(RM).
 
 
 scramble(R______) :-
     done_cube(C),
-    % move_e_cw(C, _, _, _, RC_),
-    % move_f_ccw(RC_, _, _, _, RRC_),
-    % move_e_ccw(RRC_, _, _, _, R_),
-    % move_e_ccw(R_, _, _, _, R__),
-    move_m_ccw(C, _, _, _, R___),
-    move_b_ccw(R___, _, _, _, R____),
-    move_m_cw(R____, _, _, _, R______).
+    move_e_ccw(C, _, _, R___),
+    move_b_ccw(R___, _, _, R____),
+    move_m_cw(R____, _, _, R______).
 
 main(Argv) :-
-    solve(_, _, _).
+    solve(_, _).

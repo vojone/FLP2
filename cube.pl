@@ -63,22 +63,23 @@ write_side(SIDE) :- write_side(SIDE, 0).
 
 
 write_round_sides(_, RI) :- cube_size(SIZE), RI >= SIZE, !. 
-write_round_sides([FRONT, LEFT, BACK, RIGHT, _, _], RI) :-
+write_round_sides([FRONT, RIGHT, BACK, LEFT, _, _], RI) :-
     cube_size(SIZE), RI < SIZE, !, 
-    write_row(FRONT, RI), write(" "), write_row(LEFT, RI), write(" "), write_row(BACK, RI), write(" "), write_row(RIGHT, RI), write("\n"),
-    NRI is RI + 1, write_round_sides([FRONT, LEFT, BACK, RIGHT, _, _], NRI). 
+    write_row(FRONT, RI), write(" "), write_row(RIGHT, RI), write(" "), write_row(BACK, RI), write(" "), write_row(LEFT, RI), write("\n"),
+    NRI is RI + 1, write_round_sides([FRONT, RIGHT, BACK, LEFT, _, _], NRI). 
 write_round_sides(C) :- write_round_sides(C, 0).
 
-write_cube([FRONT, LEFT, BACK, RIGHT, TOP, BOT]) :-
+write_cube([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
     write_side(TOP),
-    write_round_sides([FRONT, LEFT, BACK, RIGHT, TOP, BOT]),
+    write_round_sides([FRONT, RIGHT, BACK, LEFT, TOP, BOT]),
     write_side(BOT).
 
 
 line2row(L, I, L, []) :- cube_size(SIZE), I = SIZE, !.
-line2row([H|T], I, NLT, [H|RT]) :-
+line2row([H|T], I, NLT, [HN|RT]) :-
     cube_size(SIZE),
     I < SIZE, !,
+    atom_number(H, HN),
     NI is I + 1,
     line2row(T, NI, NLT, RT).
 line2row(L, NL, R) :- line2row(L, 0, NL, R).
@@ -142,17 +143,17 @@ read_cube(C, NL) :-
 
 
 side_color(_, []) :- !.
-side_color(COLOR, [COLOR|T]) :- side_color(T).
+side_color(COLOR, [COLOR|T]) :- side_color(COLOR, T).
 
 
 cube_done([]) :- !. 
-cube_done([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
-    side_color(FRONT, 1),
-    side_color(RIGHT, 2),
-    side_color(BACK, 3),
-    side_color(LEFT, 4),
-    side_color(TOP, 5),
-    side_color(BOT, 6).
+cube_done([FRONT, LEFT, BACK, RIGHT, TOP, BOT]) :-
+    side_color(1, FRONT),
+    side_color(2, LEFT),
+    side_color(3, BACK),
+    side_color(4, RIGHT),
+    side_color(5, TOP),
+    side_color(6, BOT).
 
 
 replace(_, [], _, _) :- !.
@@ -377,36 +378,36 @@ rotate_cube_side_ccw(C, SIDE_I, RC) :-
 check_moves(_, []) :- !.
 check_moves(M, [H|_]) :- ((M = H) -> false; true).
 
-move_u_cw(C, M, I, [(u, I)|M], RC) :-
+move_u_cw(C, M, [(u, RC)|M], RC) :-
     top(TOP_I),
     rotate_cube_side_cw(C, TOP_I, RC_),
     rotate_hlevel_cw(RC_, 0, RC).
-move_u_ccw(C, M, I, [(uc, I)|M], RC) :-
+move_u_ccw(C, M, [(uc, RC)|M], RC) :-
     top(TOP_I),
     rotate_cube_side_ccw(C, TOP_I, RC_),
     rotate_hlevel_ccw(RC_, 0, RC).
 
 
-move_d_cw(C, M, I, [(d, I)|M], RC) :-
+move_d_cw(C, M, [(d, RC)|M], RC) :-
     cube_size(SIZE),
     RI is SIZE - 1,
     bot(BOT_I),
     rotate_cube_side_cw(C, BOT_I, RC_),
     rotate_hlevel_cw(RC_, RI, RC).
-move_d_ccw(C, M, I, [(dc, I)|M], RC) :-
+move_d_ccw(C, M, [(dc, RC)|M], RC) :-
     cube_size(SIZE),
     RI is SIZE - 1,
     bot(BOT_I),
     rotate_cube_side_ccw(C, BOT_I, RC_),
     rotate_hlevel_ccw(RC_, RI, RC).
 
-move_r_cw(C, M, I, [(r, I)|M], RC) :-
+move_r_cw(C, M, [(r, RC)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     right(RIGHT_I),
     rotate_cube_side_cw(C, RIGHT_I, RC_),
     rotate_front_col_to_top(RC_, CI, RC).
-move_r_ccw(C, M, I, [(rc, I)|M], RC) :-
+move_r_ccw(C, M, [(rc, RC)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     right(RIGHT_I),
@@ -414,33 +415,33 @@ move_r_ccw(C, M, I, [(rc, I)|M], RC) :-
     rotate_front_col_to_bot(RC_, CI, RC).
 
 
-move_l_cw(C, M, I, [(l, I)|M], RC) :-
+move_l_cw(C, M, [(l, RC)|M], RC) :-
     left(LEFT_I),
     rotate_cube_side_cw(C, LEFT_I, RC_),
     rotate_front_col_to_bot(RC_, 0, RC).
-move_l_ccw(C, M, I, [(l, I)|M], RC) :-
+move_l_ccw(C, M, [(l, RC)|M], RC) :-
     left(LEFT_I),
     rotate_cube_side_ccw(C, LEFT_I, RC_),
     rotate_front_col_to_top(RC_, 0, RC).
 
 
-move_f_cw(C, M, I, [(f, I)|M], RC) :-
+move_f_cw(C, M, [(f, RC)|M], RC) :-
     front(FRONT_I),
     rotate_cube_side_cw(C, FRONT_I, RC_),
     rotate_side_col_to_bot(RC_, 0, RC).
-move_f_ccw(C, M, I, [(fc, I)|M], RC) :-
+move_f_ccw(C, M, [(fc, RC)|M], RC) :-
     front(FRONT_I),
     rotate_cube_side_ccw(C, FRONT_I, RC_),
     rotate_side_col_to_top(RC_, 0, RC).
 
 
-move_b_cw(C, M, I, [(b, I)|M], RC) :-
+move_b_cw(C, M, [(b, RC)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     back(BACK_I),
     rotate_cube_side_cw(C, BACK_I, RC_),
     rotate_side_col_to_top(RC_, CI, RC).
-move_b_ccw(C, M, I, [(bc, I)|M], RC) :-
+move_b_ccw(C, M, [(bc, RC)|M], RC) :-
     cube_size(SIZE),
     CI is SIZE - 1,
     back(BACK_I),
@@ -448,31 +449,31 @@ move_b_ccw(C, M, I, [(bc, I)|M], RC) :-
     rotate_side_col_to_bot(RC_, CI, RC).
 
 
-move_m_cw(C, M, I, [(m, I)|M], RC) :-
+move_m_cw(C, M, [(m, RC)|M], RC) :-
     cube_max_i(MAX_I),
     CI is MAX_I div 2,
     rotate_front_col_to_bot(C, CI, RC).
-move_m_ccw(C, M, I, [(mc, I)|M], RC) :-
+move_m_ccw(C, M, [(mc, RC)|M], RC) :-
     cube_max_i(MAX_I),
     CI is MAX_I div 2,
     rotate_front_col_to_top(C, CI, RC).
 
 
-move_e_cw(C, M, I, [(e, I)|M], RC) :-
+move_e_cw(C, M, [(e, RC)|M], RC) :-
     cube_max_i(MAX_I),
     RI is MAX_I div 2,
     rotate_hlevel_ccw(C, RI, RC).
-move_e_ccw(C, M, I, [(ec, I)|M], RC) :-
+move_e_ccw(C, M, [(ec, RC)|M], RC) :-
     cube_max_i(MAX_I),
     RI is MAX_I div 2,
     rotate_hlevel_cw(C, RI, RC).
 
 
-move_s_cw(C, M, I, [(s, I)|M], RC) :-
+move_s_cw(C, M, [(s, RC)|M], RC) :-
     cube_max_i(MAX_I),
     CI is MAX_I div 2,
     rotate_side_col_to_bot(C, CI, RC).
-move_s_ccw(C, M, I, [(sc, I)|M], RC) :-
+move_s_ccw(C, M, [(sc, RC)|M], RC) :-
     cube_max_i(MAX_I),
     CI is MAX_I div 2,
     rotate_side_col_to_top(C, CI, RC).
