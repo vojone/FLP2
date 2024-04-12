@@ -22,10 +22,25 @@ done_cube(C) :- C = [
     ].
 
 
+write_solutionm_([]).
+write_solutionm_([(HMOVE, HCUBE)|TMOVES]) :- 
+    write(HMOVE), write("\n"),
+    write_cube(HCUBE), write("\n"),
+    write_solutionm_(TMOVES).
 
 write_solution_([]).
 write_solution_([(_, HCUBE)|TMOVES]) :- write_cube(HCUBE), write("\n"), write_solution_(TMOVES).
-write_solution(MOVES) :- reverse(MOVES, RMOVES), write_solution_(RMOVES).
+write_solution(MOVES, ARGV) :- reverse(MOVES, RMOVES),
+    (
+        memberchk('-v', ARGV) -> 
+            write_solutionm_(RMOVES);
+            write_solution_(RMOVES)
+    ).
+
+
+write_moves_([]).
+write_moves_([(HMOVE, _)|T]) :- write(HMOVE), write(" "), write_moves(T), write("\n").
+write_moves(MOVES) :- reverse(MOVES, RMOVES), write_moves_(RMOVES).
 
 
 solve_ids_step(_, _, _, _, D) :-  D =< 0, !, false.
@@ -63,7 +78,13 @@ scramble(R______) :-
     move_b_ccw(R___, _, _, R____),
     move_m_cw(R____, _, _, R______).
 
-main(Argv) :-
+
+main(ARGV) :-
     read_cube(CUBE, NL),
     solve(CUBE, MOVES),
-    write_solution(MOVES).
+    write_solution(MOVES, ARGV),
+    (
+        memberchk('-v', ARGV) -> 
+            write_moves(MOVES);
+            true
+    ).
