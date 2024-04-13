@@ -268,7 +268,7 @@ front_col_bot(OFFSET, SIDE_INDECES) :-
     round_side_num(ROUND_SIDE_NUM),
     START_I is 0, % Start index
     END_I is ROUND_SIDE_NUM - 1, % End index
-    findall(I,
+    findall((I, c),
         (
             between(START_I, END_I, I_), % Generate indeces between START_I and END_I
             X is (I_ + OFFSET) mod ROUND_SIDE_NUM,
@@ -291,15 +291,18 @@ front_col_top(OFFSET, SIDE_INDECES) :-
 side_col_top(OFFSET, SIDE_INDECES) :-
     side_num(SIDE_NUM),
     round_side_num(ROUND_SIDE_NUM),
+    top(TOP_I),
+    bot(BOT_I),
     START_I is 0,
     END_I is ROUND_SIDE_NUM - 1,
-    findall(I,
+    findall((I, CF),
         (
             between(START_I, END_I, I_),
             X is (I_ + OFFSET) mod ROUND_SIDE_NUM,
             ODD_ALT is ((X mod 2) * (SIDE_NUM - (SIDE_NUM - X) div 2)),
             EVENT_ALT is ((X + 1) mod 2) * (X + 1),
-            I is ODD_ALT + EVENT_ALT
+            I is ODD_ALT + EVENT_ALT,
+            (memberchk(I, [TOP_I, BOT_I]) -> CF = r; CF = c)
         ), SIDE_INDECES).
 
 
@@ -319,7 +322,7 @@ hlevel_cw(OFFSET, SIDE_INDECES) :-
     round_side_num(ROUND_SIDE_NUM),
     START_I is 0,
     END_I is ROUND_SIDE_NUM - 1,
-    findall(I,
+    findall((I, r),
         (
             between(START_I, END_I, I_),
             I is (I_ + OFFSET) mod ROUND_SIDE_NUM
@@ -384,6 +387,17 @@ rotate_side_ccw(S, RS) :-
         ), RS).
 
 
+row(SIDE, RI, ROW_VALUES) :-
+    cube_size(SIZE),
+    I is SIZE * RI,
+    slice(I, SIZE, SIDE, ROW_VALUES).
+
+set_row(SIDE, RI, ROW_VALUES, NS) :-
+    cube_size(SIZE),
+    I is SIZE * RI,
+    replace_by_list(I, ROW_VALUES, SIDE, NS).
+
+
 % copy_row(row_index, source_side, _, dst_side, _, outside)
 % Copy row with given index from source side to destination side (there are
 % two unused params to make this clause compatible with copy_col clause)
@@ -438,39 +452,123 @@ rotate(C, DST_GEN, SRC_GEN, COPY, RC) :-
     msetv(C, DST_SIDE_INDECES, SIDES, RC). % Replace updated sides in the cube
 
 
-% rotate_hlevel_cw(cube, row_index, rotated_cube)
-% Rotate horizontal level of the cube specified by row index clockwise
 rotate_hlevel_cw(C, RI, RC) :-
-    rotate(C, hlevel_cw(-1), hlevel_cw(0), copy_row(RI), RC).
+    left(LEFT_I), back(BACK_I), right(RIGHT_I), front(FRONT_I),
+    nth0(LEFT_I, C, LEFT), nth0(BACK_I, C, BACK), nth0(RIGHT_I, C, RIGHT), nth0(FRONT_I, C, FRONT),
 
-% rotate_hlevel_ccw(cube, row_index, rotated_cube)
-% Rotate horizontal level of the cube specified by row index counterclockwise
+    row(FRONT, RI, FRONT_ROW),
+    row(RIGHT, RI, RIGHT_ROW),
+    row(BACK, RI, BACK_ROW),
+    row(LEFT, RI, LEFT_ROW),
+
+    set_row(FRONT, RI, LEFT_ROW, NEW_FRONT),
+    set_row(RIGHT, RI, FRONT_ROW, NEW_RIGHT),
+    set_row(BACK, RI, RIGHT_ROW, NEW_BACK),
+    set_row(LEFT, RI, BACK_ROW, NEW_LEFT),
+
+    msetv(C, [FRONT_I, RIGHT_I, BACK_I, LEFT_I], [NEW_FRONT, NEW_RIGHT, NEW_BACK, NEW_LEFT], RC).
+
+
 rotate_hlevel_ccw(C, RI, RC) :-
-    rotate(C, hlevel_ccw(-1), hlevel_ccw(0), copy_row(RI), RC).
+    left(LEFT_I), back(BACK_I), right(RIGHT_I), front(FRONT_I),
+    nth0(LEFT_I, C, LEFT), nth0(BACK_I, C, BACK), nth0(RIGHT_I, C, RIGHT), nth0(FRONT_I, C, FRONT),
+
+    row(FRONT, RI, FRONT_ROW),
+    row(RIGHT, RI, RIGHT_ROW),
+    row(BACK, RI, BACK_ROW),
+    row(LEFT, RI, LEFT_ROW),
+
+    set_row(FRONT, RI, RIGHT_ROW, NEW_FRONT),
+    set_row(RIGHT, RI, BACK_ROW, NEW_RIGHT),
+    set_row(BACK, RI, LEFT_ROW, NEW_BACK),
+    set_row(LEFT, RI, FRONT_ROW, NEW_LEFT),
+
+    msetv(C, [FRONT_I, RIGHT_I, BACK_I, LEFT_I], [NEW_FRONT, NEW_RIGHT, NEW_BACK, NEW_LEFT], RC).
 
 
-% rotate_front_col_to_bot(cube, column_index, rotated_cube)
-% Rotate front column of the cube specified by column index to bot
+
 rotate_front_col_to_bot(C, CI, RC) :-
-    rotate(C, front_col_bot(-1), front_col_bot(0), copy_col(CI), RC).
+    front(FRONT_I), top(TOP_I), back(BACK_I), bot(BOT_I),
+    nth0(FRONT_I, C, FRONT), nth0(TOP_I, C, TOP), nth0(BACK_I, C, BACK), nth0(BOT_I, C, BOT),
+    cube_max_i(MAX_I),
+    INV_CI is MAX_I - CI,
+
+    column(FRONT, CI, FRONT_COL),
+    column(TOP, CI, TOP_COL),
+    column(BACK, INV_CI, BACK_COL),
+    column(BOT, CI, BOT_COL),
+
+    set_column(FRONT, CI, TOP_COL, NEW_FRONT),
+    reverse(BACK_COL, BACK_COLR),
+    set_column(TOP, CI, BACK_COLR, NEW_TOP),
+    reverse(BOT_COL, BOT_COLR),
+    set_column(BACK, INV_CI, BOT_COLR, NEW_BACK),
+    set_column(BOT, CI, FRONT_COL, NEW_BOT),
+
+    msetv(C, [FRONT_I, TOP_I, BACK_I, BOT_I], [NEW_FRONT, NEW_TOP, NEW_BACK, NEW_BOT], RC).
 
 
-% rotate_front_col_to_top(cube, column_index, rotated_cube)
-% Rotate front column of the cube specified by column index to top
 rotate_front_col_to_top(C, CI, RC) :-
-    rotate(C, front_col_top(-1), front_col_top(0), copy_col(CI), RC).
+    front(FRONT_I), top(TOP_I), back(BACK_I), bot(BOT_I),
+    nth0(FRONT_I, C, FRONT), nth0(TOP_I, C, TOP), nth0(BACK_I, C, BACK), nth0(BOT_I, C, BOT),
+    cube_max_i(MAX_I),
+    INV_CI is MAX_I - CI,
+
+    column(FRONT, CI, FRONT_COL),
+    column(TOP, CI, TOP_COL),
+    column(BACK, INV_CI, BACK_COL),
+    column(BOT, CI, BOT_COL),
+
+    set_column(FRONT, CI, BOT_COL, NEW_FRONT),
+    set_column(TOP, CI, FRONT_COL, NEW_TOP),
+    reverse(TOP_COL, TOP_COLR),
+    set_column(BACK, INV_CI, TOP_COLR, NEW_BACK),
+    reverse(BACK_COL, BACK_COLR),
+    set_column(BOT, CI, BACK_COLR, NEW_BOT),
+
+    msetv(C, [FRONT_I, TOP_I, BACK_I, BOT_I], [NEW_FRONT, NEW_TOP, NEW_BACK, NEW_BOT], RC).
 
 
-% rotate_side_col_to_bot(cube, column_index, rotated_cube)
-% Rotate side column of the cube specified by column index to bot
-rotate_side_col_to_bot(C, CI, RC) :-
-    rotate(C, side_col_bot(-1), side_col_bot(0), copy_col(CI), RC).
-
-
-% rotate_side_col_to_top(cube, column_index, rotated_cube)
-% Rotate side column of the cube specified by column index to top
 rotate_side_col_to_top(C, CI, RC) :-
-    rotate(C, side_col_top(-1), side_col_top(0), copy_col(CI), RC).
+    left(LEFT_I), top(TOP_I), right(RIGHT_I), bot(BOT_I),
+    nth0(LEFT_I, C, LEFT), nth0(TOP_I, C, TOP), nth0(RIGHT_I, C, RIGHT), nth0(BOT_I, C, BOT),
+    cube_max_i(MAX_I),
+    INV_CI is MAX_I - CI,
+
+    column(RIGHT, CI, RIGHT_COL),
+    row(TOP, INV_CI, TOP_ROW),
+    column(LEFT, INV_CI, LEFT_COL),
+    row(BOT, CI, BOT_ROW),
+
+    reverse(BOT_ROW, BOT_ROWR),
+    set_column(RIGHT, CI, BOT_ROWR, NEW_RIGHT),
+    set_row(TOP, INV_CI, RIGHT_COL, NEW_TOP),
+    reverse(TOP_ROW, TOP_ROWR),
+    set_column(LEFT, INV_CI, TOP_ROWR, NEW_LEFT),
+    set_row(BOT, CI, LEFT_COL, NEW_BOT),
+
+    msetv(C, [LEFT_I, TOP_I, RIGHT_I, BOT_I], [NEW_LEFT, NEW_TOP, NEW_RIGHT, NEW_BOT], RC).
+
+
+rotate_side_col_to_bot(C, CI, RC) :-
+    left(LEFT_I), top(TOP_I), right(RIGHT_I), bot(BOT_I),
+    nth0(LEFT_I, C, LEFT), nth0(TOP_I, C, TOP), nth0(RIGHT_I, C, RIGHT), nth0(BOT_I, C, BOT),
+    cube_max_i(MAX_I),
+    INV_CI is MAX_I - CI,
+
+    column(RIGHT, CI, RIGHT_COL),
+    row(TOP, INV_CI, TOP_ROW),
+    column(LEFT, INV_CI, LEFT_COL),
+    row(BOT, CI, BOT_ROW),
+
+    set_column(RIGHT, CI, TOP_ROW, NEW_RIGHT),
+    reverse(LEFT_COL, LEFT_COLR),
+    set_row(TOP, INV_CI, LEFT_COLR, NEW_TOP),
+    set_column(LEFT, INV_CI, BOT_ROW, NEW_LEFT),
+    reverse(RIGHT_COL, RIGHT_COLR),
+    set_row(BOT, CI, RIGHT_COLR, NEW_BOT),
+
+    msetv(C, [LEFT_I, TOP_I, RIGHT_I, BOT_I], [NEW_LEFT, NEW_TOP, NEW_RIGHT, NEW_BOT], RC).
 
 
 % rotate_cube_side_cw(cube, side_index, rotated_cube) 
@@ -638,3 +736,10 @@ move_s_ccw(C, M, [("SC", RC)|M], RC) :-
     CI is MAX_I div 2,
     rotate_side_col_to_top(C, CI, RC).
 
+
+% move_sq(move_fs, cube, moves, updated_moves, rotated_cube)
+% Perform sequence of moves
+move_seq([], C, M, M, C).
+move_seq([HMOVE|TMOVES], C, M, RM, RC) :-
+    call(HMOVE, C, M, RM_, RC_),
+    move_seq(TMOVES, RC_, RM_, RM, RC).
