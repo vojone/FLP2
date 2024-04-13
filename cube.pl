@@ -398,58 +398,6 @@ set_row(SIDE, RI, ROW_VALUES, NS) :-
     replace_by_list(I, ROW_VALUES, SIDE, NS).
 
 
-% copy_row(row_index, source_side, _, dst_side, _, outside)
-% Copy row with given index from source side to destination side (there are
-% two unused params to make this clause compatible with copy_col clause)
-copy_row(RI, SRC_SIDE, _, DST_SIDE, _, NS) :-
-    cube_size(SIZE),
-    I is SIZE * RI,
-    slice(I, SIZE, SRC_SIDE, SIDE_ROW),
-    replace_by_list(I, SIDE_ROW, DST_SIDE, NS).
-
-
-% copy_col(row_index, source_side, _, dst_side, _, outside)
-% Copy columns with given index from source side to destination side
-copy_col(CI, SRC_SIDE, _, DST_SIDE, DST_SIDE_I, NS) :-
-    back(BACK_I), left(LEFT_I), memberchk(DST_SIDE_I, [BACK_I, LEFT_I]), !,
-    cube_max_i(MAX_I),
-    INV_CI is MAX_I - CI, % If dst side is left or back, inverse the index
-    column(SRC_SIDE, CI, VALUES_REV),
-    reverse(VALUES_REV, VALUES),
-    set_column(DST_SIDE, INV_CI, VALUES, NS).
-
-copy_col(CI, SRC_SIDE, SRC_SIDE_I, DST_SIDE, _, NS) :-
-    back(BACK_I), left(LEFT_I), memberchk(SRC_SIDE_I, [BACK_I, LEFT_I]), !,
-    cube_max_i(MAX_I),
-    INV_CI is MAX_I - CI, % If source side is left or back, inverse the index
-    column(SRC_SIDE, INV_CI, VALUES_REV),
-    reverse(VALUES_REV, VALUES),
-    set_column(DST_SIDE, CI, VALUES, NS).
-
-copy_col(CI, SRC_SIDE, _, DST_SIDE, _, NS) :-
-    column(SRC_SIDE, CI, VALUES),
-    set_column(DST_SIDE, CI, VALUES, NS).
-
-
-% rotate(cube, dst_generator, source_generator, copy_f, rotated_cube)
-% Circular copy of the part of the cube (row/col) from one side to another,
-% dst sides and sources sides are specififed by lists and copying itself
-% is perormed by given copy function
-rotate(C, DST_GEN, SRC_GEN, COPY, RC) :-
-    round_side_num(ROUND_SIDE_NUM),
-    call(DST_GEN, SRC_SIDE_INDECES), % Create list with indeces of source sides
-    call(SRC_GEN, DST_SIDE_INDECES), % Create list with indeces of destination sides
-    ROUND_SIDE_NUM_ is ROUND_SIDE_NUM - 1,
-    findall(S,
-        (
-            between(0, ROUND_SIDE_NUM_, I),
-            nth0(I, SRC_SIDE_INDECES, SRC_SIDE_I),
-            nth0(I, DST_SIDE_INDECES, DST_SIDE_I),
-            nth0(SRC_SIDE_I, C, SRC_SIDE), % Take side due to index
-            nth0(DST_SIDE_I, C, DST_SIDE),
-            call(COPY, SRC_SIDE, SRC_SIDE_I, DST_SIDE, DST_SIDE_I, S) % Copy part of the side to another
-        ), SIDES),
-    msetv(C, DST_SIDE_INDECES, SIDES, RC). % Replace updated sides in the cube
 
 
 rotate_hlevel_cw(C, RI, RC) :-
@@ -550,8 +498,10 @@ rotate_side_col_to_top(C, CI, RC) :-
     msetv(C, [LEFT_I, TOP_I, RIGHT_I, BOT_I], [NEW_LEFT, NEW_TOP, NEW_RIGHT, NEW_BOT], RC).
 
 
+% rotate_side_col_to_bot(cube, column_index, rotated_cube)
+% Rotate side column to bot (clockwise from the front)
 rotate_side_col_to_bot(C, CI, RC) :-
-    left(LEFT_I), top(TOP_I), right(RIGHT_I), bot(BOT_I),
+    left(LEFT_I), top(TOP_I), right(RIGHT_I), bot(BOT_I), % right, top, left, bot sides will be used
     nth0(LEFT_I, C, LEFT), nth0(TOP_I, C, TOP), nth0(RIGHT_I, C, RIGHT), nth0(BOT_I, C, BOT),
     cube_max_i(MAX_I),
     INV_CI is MAX_I - CI,
@@ -743,3 +693,66 @@ move_seq([], C, M, M, C).
 move_seq([HMOVE|TMOVES], C, M, RM, RC) :-
     call(HMOVE, C, M, RM_, RC_),
     move_seq(TMOVES, RC_, RM_, RM, RC).
+
+
+front_right([], C, M, M, C).
+front_right([move_u_cw|TMOVES], C, M, RM, RC) :- move_u_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_u_ccw|TMOVES], C, M, RM, RC) :- move_u_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_d_cw|TMOVES], C, M, RM, RC) :- move_d_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_d_ccw|TMOVES], C, M, RM, RC) :- move_d_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_r_cw|TMOVES], C, M, RM, RC) :- move_b_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_r_ccw|TMOVES], C, M, RM, RC) :- move_b_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_l_cw|TMOVES], C, M, RM, RC) :- move_f_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_l_ccw|TMOVES], C, M, RM, RC) :- move_f_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_f_cw|TMOVES], C, M, RM, RC) :- move_r_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_f_ccw|TMOVES], C, M, RM, RC) :- move_r_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_b_cw|TMOVES], C, M, RM, RC) :- move_l_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_b_ccw|TMOVES], C, M, RM, RC) :- move_l_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_m_cw|TMOVES], C, M, RM, RC) :- move_s_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_m_ccw|TMOVES], C, M, RM, RC) :- move_s_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_e_cw|TMOVES], C, M, RM, RC) :- move_e_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_e_ccw|TMOVES], C, M, RM, RC) :- move_e_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_s_cw|TMOVES], C, M, RM, RC) :- move_m_cw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+front_right([move_s_csw|TMOVES], C, M, RM, RC) :- move_m_ccw(C, M, RM_, RC_), front_right(TMOVES, RM, RC).
+
+
+front_back([], C, M, M, C).
+front_back([move_u_cw|TMOVES], C, M, RM, RC) :- move_u_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_u_ccw|TMOVES], C, M, RM, RC) :- move_u_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_d_cw|TMOVES], C, M, RM, RC) :- move_d_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_d_ccw|TMOVES], C, M, RM, RC) :- move_d_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_r_cw|TMOVES], C, M, RM, RC) :- move_l_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_r_ccw|TMOVES], C, M, RM, RC) :- move_l_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_l_cw|TMOVES], C, M, RM, RC) :- move_r_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_l_ccw|TMOVES], C, M, RM, RC) :- move_r_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_f_cw|TMOVES], C, M, RM, RC) :- move_b_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_f_ccw|TMOVES], C, M, RM, RC) :- move_b_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_b_cw|TMOVES], C, M, RM, RC) :- move_f_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_b_ccw|TMOVES], C, M, RM, RC) :- move_f_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_m_cw|TMOVES], C, M, RM, RC) :- move_m_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_m_ccw|TMOVES], C, M, RM, RC) :- move_m_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_e_cw|TMOVES], C, M, RM, RC) :- move_e_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_e_ccw|TMOVES], C, M, RM, RC) :- move_e_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_s_cw|TMOVES], C, M, RM, RC) :- move_s_ccw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+front_back([move_s_csw|TMOVES], C, M, RM, RC) :- move_s_cw(C, M, RM_, RC_), front_back(TMOVES, RM, RC).
+
+
+front_left([], C, M, M, C).
+front_left([move_u_cw|TMOVES], C, M, RM, RC) :- move_u_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_u_ccw|TMOVES], C, M, RM, RC) :- move_u_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_d_cw|TMOVES], C, M, RM, RC) :- move_d_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_d_ccw|TMOVES], C, M, RM, RC) :- move_d_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_r_cw|TMOVES], C, M, RM, RC) :- move_f_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_r_ccw|TMOVES], C, M, RM, RC) :- move_f_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_l_cw|TMOVES], C, M, RM, RC) :- move_b_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_l_ccw|TMOVES], C, M, RM, RC) :- move_b_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_f_cw|TMOVES], C, M, RM, RC) :- move_l_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_f_ccw|TMOVES], C, M, RM, RC) :- move_l_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_b_cw|TMOVES], C, M, RM, RC) :- move_r_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_b_ccw|TMOVES], C, M, RM, RC) :- move_r_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_m_cw|TMOVES], C, M, RM, RC) :- move_s_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_m_ccw|TMOVES], C, M, RM, RC) :- move_s_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_e_cw|TMOVES], C, M, RM, RC) :- move_e_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_e_ccw|TMOVES], C, M, RM, RC) :- move_e_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_s_cw|TMOVES], C, M, RM, RC) :- move_m_ccw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
+front_left([move_s_csw|TMOVES], C, M, RM, RC) :- move_m_cw(C, M, RM_, RC_), front_left(TMOVES, RM, RC).
