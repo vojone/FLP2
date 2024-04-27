@@ -62,6 +62,7 @@ cube_max_i(I) :-
 
 
 % line2row(inline, line_remainder, row)
+%
 % Convert textual line to row of the side of rubikscube
 line2row(L, I, L, []) :- cube_size(SIZE), I = SIZE, !.
 line2row([H|T], I, NLT, [HN|RT]) :-
@@ -74,6 +75,7 @@ line2row(L, NL, R) :- line2row(L, 0, NL, R).
 
 
 % line2row(inline, line_remainder, side)
+%
 % Convert textual line to a side of rubikscube
 lines2side(L, I, L, []) :- cube_size(SIZE), I = SIZE, !.
 lines2side([H|T], I, [REM|NL], [NR|ST]) :-
@@ -88,6 +90,7 @@ lines2side(L, NL, SIDE) :-
 
 
 % pop_empty_lines(lines_list, outlinelist)
+%
 % Remove speicfied amount of empty line lists from the start of the line list
 pop_empty_lines([], I, []) :- I = 0, !.
 pop_empty_lines(L, I, L) :- cube_size(SIZE), I = SIZE, !.
@@ -98,6 +101,7 @@ pop_empty_lines(L, NL) :-
 
 
 % skip_whitespace(line, outline)
+%
 % Skip whitespace (no newline) at start of the line
 skip_whitespace([], I, []) :- I = 0, !.
 %pop_empty_lines([[]|T], I, [[]|T]) :- I = 0, !.
@@ -110,6 +114,7 @@ skip_whitespace(L, NL) :-
 
 
 % lines2cube(line, line_remainder, cube)
+%
 % Convert lines to the rubik's cube
 lines2cube(L, I, NL, [SIDE]) :-
     round_side_num(ROUND_SIDE_NUM),
@@ -135,6 +140,7 @@ lines2cube(L, REM, C) :-
 
 
 % read_cube(result_cube, line_remainder)
+%
 % Reads rubikscube from stdin in the following format:
 % 555
 % 555
@@ -157,6 +163,7 @@ read_cube(C, NL) :-
 
 
 % write_row(side, row_index)
+%
 % Write one row of given side specififed by the index to the stdout
 write_row(_, _, I) :- cube_size(SIZE), I >= SIZE, !. 
 write_row(SIDE, RI, I) :-
@@ -170,6 +177,7 @@ write_row(SIDE, RI) :- write_row(SIDE, RI, 0).
 
 
 % write_side(side)
+%
 % Write given to the stdout
 write_side(_, RI) :- cube_size(SIZE), RI >= SIZE, !. 
 write_side(SIDE, RI) :- cube_size(SIZE), RI < SIZE, !,
@@ -178,6 +186,7 @@ write_side(SIDE) :- write_side(SIDE, 0).
 
 
 % write_round_sides(cube)
+%
 % Write sides around the perimeter of the cube to stdout
 write_round_sides(_, RI) :- cube_size(SIZE), RI >= SIZE, !. 
 write_round_sides([FRONT, RIGHT, BACK, LEFT, _, _], RI) :-
@@ -191,6 +200,7 @@ write_round_sides(C) :- write_round_sides(C, 0).
 
 
 % write_cube(cube)
+%
 % Write the whole cube to the stdout
 write_cube([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
     write_side(TOP),
@@ -204,6 +214,7 @@ write_cube([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
 /**                         Clauses for performing moves                    **/
 
 % sign2move(move_sign, move_clause)
+%
 % Translates signs of moves to clauses that actually perform the move
 sign2move("U", move_u_cw) :- !.
 sign2move("UC", move_u_ccw) :- !.
@@ -281,6 +292,7 @@ move_id(
         ].
 
 % move_u_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform U move
 move_u_cw(
     [
@@ -327,6 +339,7 @@ move_u_cw(
 
 
 % move_u_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform U' move
 move_u_ccw(
     [
@@ -373,9 +386,8 @@ move_u_ccw(
 
 
 % move_d_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform D move
-
-
 move_d_cw(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
@@ -422,6 +434,7 @@ move_d_cw(
 
 
 % move_d_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform D' move
 move_d_ccw(
     [
@@ -468,6 +481,7 @@ move_d_ccw(
 
 
 % move_r_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform R move
 move_r_cw(
     [
@@ -514,6 +528,7 @@ move_r_cw(
 
 
 % move_r_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform R' move
 move_r_ccw(
     [
@@ -560,6 +575,7 @@ move_r_ccw(
 
 
 % move_l_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform L move
 move_l_cw(
     [
@@ -605,6 +621,7 @@ move_l_cw(
         ].
 
 % move_l_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform L' move
 move_l_ccw(
     [
@@ -651,6 +668,7 @@ move_l_ccw(
 
 
 % move_f_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform F move
 move_f_cw(
     [
@@ -697,6 +715,7 @@ move_f_cw(
 
 
 % move_f_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform F' move
 move_f_ccw(
     [
@@ -743,6 +762,7 @@ move_f_ccw(
 
 
 % move_b_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform B move
 move_b_cw(
     [
@@ -788,6 +808,7 @@ move_b_cw(
         ].
 
 % move_b_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform B' move
 move_b_ccw(
     [
@@ -834,6 +855,7 @@ move_b_ccw(
 
 
 % move_m_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform M move
 move_m_cw(
     [
@@ -879,6 +901,7 @@ move_m_cw(
         ].
 
 % move_m_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform M' move
 move_m_ccw(
     [
@@ -925,6 +948,7 @@ move_m_ccw(
 
 
 % move_e_cw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform E move
 move_e_cw(
     [
@@ -970,6 +994,7 @@ move_e_cw(
         ].
 
 % move_e_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform E' move
 move_e_ccw(
     [
@@ -1016,6 +1041,7 @@ move_e_ccw(
 
 
 % move_s_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform S move
 move_s_cw(
     [
@@ -1062,6 +1088,7 @@ move_s_cw(
 
 
 % move_s_ccw(cube, moves, updated_moves, rotated_cube)
+%
 % Perform S' move
 move_s_ccw(
     [
@@ -1108,6 +1135,7 @@ move_s_ccw(
 
 
 % move_sq(move_fs, cube, moves, updated_moves, rotated_cube)
+%
 % Perform sequence of moves
 move_seq([], C, M, M, C).
 move_seq([HMOVE|TMOVES], C, M, RM, RC) :-
