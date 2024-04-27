@@ -2,7 +2,7 @@
 * flp-23-log
 * cube.pl
 *
-* Implementation of manipulations with the rubikscube. All implemented
+* Implementation of moves with the rubikscube. All implemented
 * manipulations presumes that the following representation is used:
 * cube(C) :- C = [
 *     [1,1,1,1,1,1,1,1,1],
@@ -25,7 +25,7 @@
 % Cube side size
 cube_size(3).
 
-% Idexes of cube sides
+% Indexes of cube sides
 front(0).
 right(1).
 back(2).
@@ -204,487 +204,878 @@ cube_done([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
     side_color(6, BOT).
 
 
-
-/**                              Auxiliary clauses                          **/
-
-
-% setv(inlist, I, V, outlist)
-% Set value in list at index I to value V
-setv([], _, _, []) :- !.
-setv([_|T], I, V, [V|T]) :- I = 0, !.
-setv([H|T], I, V, [H|NT]) :- I > 0, NI is I - 1, setv(T, NI, V, NT).
-
-
-% msetv(inlist, indeces, values, outlist)
-% Set values in list at given indeces to given values
-msetv(L, [], _, L) :- !.
-msetv(L, _, [], L) :- !.
-msetv(L, [HI|TI], [HVAL|TVAL], NL) :-
-    setv(L, HI, HVAL, NL_),
-    msetv(NL_, TI, TVAL, NL).
-
-
-% between_rev(high, low, number)
-% Reverse between - generates number from HIGH to LOW
-between_rev(HIGH, LOW, X) :- between(LOW, HIGH, X_), X is HIGH - X_ + LOW. 
-
-
-% replace_by_list(index, targetlist, sourcelist, outlist)
-% Replace the part of list starting at index I by another list (or its part)
-replace_by_list(_, _, [], []) :- !.
-replace_by_list(_, [], L, L) :- !.
-replace_by_list(I, [NH|NT], [_|T], NL) :- I = 0, replace_by_list(0, NT, T, NLT), NL = [NH|NLT], !.
-replace_by_list(I, N, [H|T], [H|NT]) :- I > 0, NI is I - 1, replace_by_list(NI, N, T, NT).
-
-
-% slice(index, len, sourcelist, slice)
-% Get the part of the given list starting at index I with the specified length 
-slice(_, _, [], []) :- !.
-slice(I, N, _, []) :- I = 0, N = 0, !.
-slice(I, N, [H|LT], [H|ST]) :- I = 0, N > 0, NN is N - 1, slice(0, NN, LT, ST), !.
-slice(I, N, [_|T], S) :- I > 0, NI is I - 1, slice(NI, N, T, S).
-
-
-/**                Clauses for manipulating with the cube                   **/
-
-
-% Generators of number
-
-
-% column_indeces(column_index, i)
-% Generate indeces of elements of column with given index 
-column_indeces(CI, I) :-
-    cube_size(SIZE),
-    cube_max_i(MAX_I),
-    between(0, MAX_I, X),
-    I is CI + X * SIZE.
-
-
-% front_col_bot(offset, side_indeces)
-% Create list of indeces of sides for rotation of front columns to bot
-% (ccw when right side is on the front)
-front_col_bot(OFFSET, SIDE_INDECES) :-
-    side_num(SIDE_NUM),
-    round_side_num(ROUND_SIDE_NUM),
-    START_I is 0, % Start index
-    END_I is ROUND_SIDE_NUM - 1, % End index
-    findall((I, c),
-        (
-            between(START_I, END_I, I_), % Generate indeces between START_I and END_I
-            X is (I_ + OFFSET) mod ROUND_SIDE_NUM,
-            I is (X mod 2) * (SIDE_NUM - ((X + 1) div 2)) + ((X + 1) mod 2) * X % Calculation of side index
-        ), SIDE_INDECES).
-
-
-% front_col_top(offset, side_indeces)
-% Create list of indeces of sides for rotation of front columns to top
-% (cw when right side is on the front)
-front_col_top(OFFSET, SIDE_INDECES) :-
-    round_side_num(ROUND_SIDE_NUM),
-    OFFSET_REV is ROUND_SIDE_NUM - OFFSET + 1,
-    front_col_bot(OFFSET_REV, SIDE_INDECES_),
-    reverse(SIDE_INDECES_, SIDE_INDECES).
-
-
-% side_col_top(offset, side_indeces)
-% Create list of indeces of sides for rotation of side columns to top
-side_col_top(OFFSET, SIDE_INDECES) :-
-    side_num(SIDE_NUM),
-    round_side_num(ROUND_SIDE_NUM),
-    top(TOP_I),
-    bot(BOT_I),
-    START_I is 0,
-    END_I is ROUND_SIDE_NUM - 1,
-    findall((I, CF),
-        (
-            between(START_I, END_I, I_),
-            X is (I_ + OFFSET) mod ROUND_SIDE_NUM,
-            ODD_ALT is ((X mod 2) * (SIDE_NUM - (SIDE_NUM - X) div 2)),
-            EVENT_ALT is ((X + 1) mod 2) * (X + 1),
-            I is ODD_ALT + EVENT_ALT,
-            (memberchk(I, [TOP_I, BOT_I]) -> CF = r; CF = c)
-        ), SIDE_INDECES).
-
-
-% side_col_bot(offset, side_indeces)
-% Create list of indeces of sides for rotation of side columns to bot
-side_col_bot(OFFSET, SIDE_INDECES) :-
-    round_side_num(ROUND_SIDE_NUM),
-    OFFSET_REV is ROUND_SIDE_NUM - OFFSET + 1,
-    side_col_top(OFFSET_REV, SIDE_INDECES_),
-    reverse(SIDE_INDECES_, SIDE_INDECES).
-
-
-% hlevel_cw(offset, side_indeces)
-% Create list of side indeces for rotation of horizontal level of the cube cw
-% (from the perspective of the top side)
-hlevel_cw(OFFSET, SIDE_INDECES) :-
-    round_side_num(ROUND_SIDE_NUM),
-    START_I is 0,
-    END_I is ROUND_SIDE_NUM - 1,
-    findall((I, r),
-        (
-            between(START_I, END_I, I_),
-            I is (I_ + OFFSET) mod ROUND_SIDE_NUM
-        ), SIDE_INDECES).
-
-
-% hlevel_ccw(offset, side_indeces)
-% Create list of side indeces for rotation of horizontal level of the cube ccw
-% (from the perspective of the top side)
-hlevel_ccw(OFFSET, SIDE_INDECES) :-
-    round_side_num(ROUND_SIDE_NUM),
-    OFFSET_REV is ROUND_SIDE_NUM - OFFSET + 1,
-    hlevel_cw(OFFSET_REV, SIDE_INDECES_),
-    reverse(SIDE_INDECES_, SIDE_INDECES).
-
-
-
-
-
-% element(side, column_index, row_index, element).
-% Get the element in row with idex RI and in column with index CI of the
-% given side of the cube
-element(S, CI, RI, E) :- cube_size(SIDE), I is CI + RI * SIDE, nth0(I, S, E).
-
-
-% set_column(inside, cloumn_index, values, outside)
-% Set column with index CI in the given side to the new values
-set_column(S, CI, COL_VALUES, NS) :-
-    findall(I, (column_indeces(CI, I)), COL_INDECES),
-    msetv(S, COL_INDECES, COL_VALUES, NS).
-
-
-
-% column(side, column_index, values)
-% Get values of column with specified index in given side
-column(S, CI, COL_VALUES) :-
-    findall(V, (column_indeces(CI, I), nth0(I, S, V)), COL_VALUES).
-
-
-
-% rotate_side_cw(side, rotated_side)
-% Perform rotation of side (plane/matrix) by 90° clockwise
-rotate_side_cw(S, RS) :-
-    cube_max_i(MAX_I),
-    findall(E,
-        (
-            between(0, MAX_I, CI), % For each column from 0 to MAX_I (included)
-            between_rev(MAX_I, 0, RI), % For each row from MAX_I to 0 
-            element(S, CI, RI, E) % Pick element on the current coordinates
-        ), RS).
-
-
-% rotate_side_ccw(side, rotated_side)
-% Perform rotation of side (plane/matrix) by 90° COUNTER clockwise
-rotate_side_ccw(S, RS) :-
-    cube_max_i(MAX_I),
-    findall(E,
-        (
-            between_rev(MAX_I, 0, CI), % For each column from MAX_I to 0 (included)
-            between(0, MAX_I, RI), % For each row from 0 to MAX_I 
-            element(S, CI, RI, E) % Pick element on the current coordinates
-        ), RS).
-
-
-row(SIDE, RI, ROW_VALUES) :-
-    cube_size(SIZE),
-    I is SIZE * RI,
-    slice(I, SIZE, SIDE, ROW_VALUES).
-
-set_row(SIDE, RI, ROW_VALUES, NS) :-
-    cube_size(SIZE),
-    I is SIZE * RI,
-    replace_by_list(I, ROW_VALUES, SIDE, NS).
-
-
-
-
-rotate_hlevel_cw(C, RI, RC) :-
-    left(LEFT_I), back(BACK_I), right(RIGHT_I), front(FRONT_I),
-    nth0(LEFT_I, C, LEFT), nth0(BACK_I, C, BACK), nth0(RIGHT_I, C, RIGHT), nth0(FRONT_I, C, FRONT),
-
-    row(FRONT, RI, FRONT_ROW),
-    row(RIGHT, RI, RIGHT_ROW),
-    row(BACK, RI, BACK_ROW),
-    row(LEFT, RI, LEFT_ROW),
-
-    set_row(FRONT, RI, RIGHT_ROW, NEW_FRONT),
-    set_row(RIGHT, RI, BACK_ROW, NEW_RIGHT),
-    set_row(BACK, RI, LEFT_ROW, NEW_BACK),
-    set_row(LEFT, RI, FRONT_ROW, NEW_LEFT),
-
-    msetv(C, [FRONT_I, RIGHT_I, BACK_I, LEFT_I], [NEW_FRONT, NEW_RIGHT, NEW_BACK, NEW_LEFT], RC).
-
-
-rotate_hlevel_ccw(C, RI, RC) :-
-    left(LEFT_I), back(BACK_I), right(RIGHT_I), front(FRONT_I),
-    nth0(LEFT_I, C, LEFT), nth0(BACK_I, C, BACK), nth0(RIGHT_I, C, RIGHT), nth0(FRONT_I, C, FRONT),
-
-    row(FRONT, RI, FRONT_ROW),
-    row(RIGHT, RI, RIGHT_ROW),
-    row(BACK, RI, BACK_ROW),
-    row(LEFT, RI, LEFT_ROW),
-
-    set_row(FRONT, RI, LEFT_ROW, NEW_FRONT),
-    set_row(RIGHT, RI, FRONT_ROW, NEW_RIGHT),
-    set_row(BACK, RI, RIGHT_ROW, NEW_BACK),
-    set_row(LEFT, RI, BACK_ROW, NEW_LEFT),
-
-    msetv(C, [FRONT_I, RIGHT_I, BACK_I, LEFT_I], [NEW_FRONT, NEW_RIGHT, NEW_BACK, NEW_LEFT], RC).
-
-
-
-rotate_front_col_to_bot(C, CI, RC) :-
-    front(FRONT_I), top(TOP_I), back(BACK_I), bot(BOT_I),
-    nth0(FRONT_I, C, FRONT), nth0(TOP_I, C, TOP), nth0(BACK_I, C, BACK), nth0(BOT_I, C, BOT),
-    cube_max_i(MAX_I),
-    INV_CI is MAX_I - CI,
-
-    column(FRONT, CI, FRONT_COL),
-    column(TOP, CI, TOP_COL),
-    column(BACK, INV_CI, BACK_COL),
-    column(BOT, CI, BOT_COL),
-
-    set_column(FRONT, CI, TOP_COL, NEW_FRONT),
-    reverse(BACK_COL, BACK_COLR),
-    set_column(TOP, CI, BACK_COLR, NEW_TOP),
-    reverse(BOT_COL, BOT_COLR),
-    set_column(BACK, INV_CI, BOT_COLR, NEW_BACK),
-    set_column(BOT, CI, FRONT_COL, NEW_BOT),
-
-    msetv(C, [FRONT_I, TOP_I, BACK_I, BOT_I], [NEW_FRONT, NEW_TOP, NEW_BACK, NEW_BOT], RC).
-
-
-rotate_front_col_to_top(C, CI, RC) :-
-    front(FRONT_I), top(TOP_I), back(BACK_I), bot(BOT_I),
-    nth0(FRONT_I, C, FRONT), nth0(TOP_I, C, TOP), nth0(BACK_I, C, BACK), nth0(BOT_I, C, BOT),
-    cube_max_i(MAX_I),
-    INV_CI is MAX_I - CI,
-
-    column(FRONT, CI, FRONT_COL),
-    column(TOP, CI, TOP_COL),
-    column(BACK, INV_CI, BACK_COL),
-    column(BOT, CI, BOT_COL),
-
-    set_column(FRONT, CI, BOT_COL, NEW_FRONT),
-    set_column(TOP, CI, FRONT_COL, NEW_TOP),
-    reverse(TOP_COL, TOP_COLR),
-    set_column(BACK, INV_CI, TOP_COLR, NEW_BACK),
-    reverse(BACK_COL, BACK_COLR),
-    set_column(BOT, CI, BACK_COLR, NEW_BOT),
-
-    msetv(C, [FRONT_I, TOP_I, BACK_I, BOT_I], [NEW_FRONT, NEW_TOP, NEW_BACK, NEW_BOT], RC).
-
-
-rotate_side_col_to_top(C, CI, RC) :-
-    left(LEFT_I), top(TOP_I), right(RIGHT_I), bot(BOT_I),
-    nth0(LEFT_I, C, LEFT), nth0(TOP_I, C, TOP), nth0(RIGHT_I, C, RIGHT), nth0(BOT_I, C, BOT),
-    cube_max_i(MAX_I),
-    INV_CI is MAX_I - CI,
-
-    column(RIGHT, CI, RIGHT_COL),
-    row(TOP, INV_CI, TOP_ROW),
-    column(LEFT, INV_CI, LEFT_COL),
-    row(BOT, CI, BOT_ROW),
-
-    reverse(BOT_ROW, BOT_ROWR),
-    set_column(RIGHT, CI, BOT_ROWR, NEW_RIGHT),
-    set_row(TOP, INV_CI, RIGHT_COL, NEW_TOP),
-    reverse(TOP_ROW, TOP_ROWR),
-    set_column(LEFT, INV_CI, TOP_ROWR, NEW_LEFT),
-    set_row(BOT, CI, LEFT_COL, NEW_BOT),
-
-    msetv(C, [LEFT_I, TOP_I, RIGHT_I, BOT_I], [NEW_LEFT, NEW_TOP, NEW_RIGHT, NEW_BOT], RC).
-
-
-% rotate_side_col_to_bot(cube, column_index, rotated_cube)
-% Rotate side column to bot (clockwise from the front)
-rotate_side_col_to_bot(C, CI, RC) :-
-    left(LEFT_I), top(TOP_I), right(RIGHT_I), bot(BOT_I), % right, top, left, bot sides will be used
-    nth0(LEFT_I, C, LEFT), nth0(TOP_I, C, TOP), nth0(RIGHT_I, C, RIGHT), nth0(BOT_I, C, BOT),
-    cube_max_i(MAX_I),
-    INV_CI is MAX_I - CI,
-
-    column(RIGHT, CI, RIGHT_COL),
-    row(TOP, INV_CI, TOP_ROW),
-    column(LEFT, INV_CI, LEFT_COL),
-    row(BOT, CI, BOT_ROW),
-
-    set_column(RIGHT, CI, TOP_ROW, NEW_RIGHT),
-    reverse(LEFT_COL, LEFT_COLR),
-    set_row(TOP, INV_CI, LEFT_COLR, NEW_TOP),
-    set_column(LEFT, INV_CI, BOT_ROW, NEW_LEFT),
-    reverse(RIGHT_COL, RIGHT_COLR),
-    set_row(BOT, CI, RIGHT_COLR, NEW_BOT),
-
-    msetv(C, [LEFT_I, TOP_I, RIGHT_I, BOT_I], [NEW_LEFT, NEW_TOP, NEW_RIGHT, NEW_BOT], RC).
-
-
-% rotate_cube_side_cw(cube, side_index, rotated_cube) 
-% Rotate the whole side of the cube clockwise
-rotate_cube_side_cw(C, SIDE_I, RC) :-
-    nth0(SIDE_I, C, SIDE),
-    rotate_side_cw(SIDE, RSIDE), % Create rotated side
-    setv(C, SIDE_I, RSIDE, RC). % Replace the old side with rotated one
-
-% rotate_cube_side_ccw(cube, side_index, rotated_cube) 
-% Rotate the whole side of the cube counterclockwise
-rotate_cube_side_ccw(C, SIDE_I, RC) :-
-    nth0(SIDE_I, C, SIDE),
-    rotate_side_ccw(SIDE, RSIDE),
-    setv(C, SIDE_I, RSIDE, RC).
-
-
-
-/**                            Particular moves                             **/
-
+/**                         Clauses for performing moves                    **/ 
+
+
+% Identity move
+move_id(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                F3, F4, F5,
+                F6, F7, F8
+            ],
+            [
+                R0, R1, R2,
+                R3, R4, R5,
+                R6, R7, R8
+            ],
+            [
+                B0, B1, B2,
+                B3, B4, B5,
+                B6, B7, B8
+            ],
+            [
+                L0, L1, L2,
+                L3, L4, L5,
+                L6, L7, L8
+            ],
+            [
+                T0, T1, T2,
+                T3, T4, T5,
+                T6, T7, T8
+            ],
+            [
+                D0, D1, D2,
+                D3, D4, D5,
+                D6, D7, D8
+            ]
+        ].
 
 % move_u_cw(cube, moves, updated_moves, rotated_cube)
 % Perform U move
-move_u_cw(C, M, [("U", RC)|M], RC) :-
-    top(TOP_I), % Get index of the top side
-    rotate_cube_side_cw(C, TOP_I, RC_), % Rotate the side
-    rotate_hlevel_cw(RC_, 0, RC). % Rotate the adjancent row (in the correct direction)
+move_u_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("U", RC)|M], RC) :-
+        RC = [
+            [
+                L0, L1, L2,
+                F3, F4, F5,
+                F6, F7, F8
+            ],
+            [
+                F0, F1, F2,
+                R3, R4, R5,
+                R6, R7, R8
+            ],
+            [
+                R0, R1, R2,
+                B3, B4, B5,
+                B6, B7, B8
+            ],
+            [
+                B0, B1, B2,
+                L3, L4, L5,
+                L6, L7, L8
+            ],
+            [
+                T6, T3, T0,
+                T7, T4, T1,
+                T8, T5, T2
+            ],
+            [
+                D0, D1, D2,
+                D3, D4, D5,
+                D6, D7, D8
+            ]
+        ].
+
 
 % move_u_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform U' move
-move_u_ccw(C, M, [("UC", RC)|M], RC) :-
-    top(TOP_I),
-    rotate_cube_side_ccw(C, TOP_I, RC_),
-    rotate_hlevel_ccw(RC_, 0, RC).
+move_u_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("UC", RC)|M], RC) :-
+        RC = [
+            [
+                L0, L1, L2,
+                F3, F4, F5,
+                F6, F7, F8
+            ],
+            [
+                F0, F1, F2,
+                R3, R4, R5,
+                R6, R7, R8
+            ],
+            [
+                R0, R1, R2,
+                B3, B4, B5,
+                B6, B7, B8
+            ],
+            [
+                B0, B1, B2,
+                L3, L4, L5,
+                L6, L7, L8
+            ],
+            [
+                T2, T5, T8,
+                T1, T4, T7,
+                T0, T3, T6
+            ],
+            [
+                D0, D1, D2,
+                D3, D4, D5,
+                D6, D7, D8
+            ]
+        ].
 
 
 % move_d_cw(cube, moves, updated_moves, rotated_cube)
 % Perform D move
-move_d_cw(C, M, [("D", RC)|M], RC) :-
-    cube_size(SIZE),
-    RI is SIZE - 1,
-    bot(BOT_I),
-    rotate_cube_side_cw(C, BOT_I, RC_),
-    rotate_hlevel_cw(RC_, RI, RC).
+
+
+move_d_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("D", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                F3, F4, F5,
+                L6, L7, L8
+            ],
+            [
+                R0, R1, R2,
+                R3, R4, R5,
+                F6, F7, F8
+            ],
+            [
+                B0, B1, B2,
+                B3, B4, B5,
+                R6, R7, R8
+            ],
+            [
+                L0, L1, L2,
+                L3, L4, L5,
+                B6, B7, B8
+            ],
+            [
+                T0, T1, T2,
+                T3, T4, T5,
+                T6, T7, T8
+            ],
+            [
+                D6, D3, D0,
+                D7, D4, D1,
+                D8, D5, D2
+            ]
+        ].
+
+
 
 % move_d_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform D' move
-move_d_ccw(C, M, [("DC", RC)|M], RC) :-
-    cube_size(SIZE),
-    RI is SIZE - 1,
-    bot(BOT_I),
-    rotate_cube_side_ccw(C, BOT_I, RC_),
-    rotate_hlevel_ccw(RC_, RI, RC).
+move_d_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("DC", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                F3, F4, F5,
+                R6, R7, R8
+            ],
+            [
+                R0, R1, R2,
+                R3, R4, R5,
+                B6, B7, B8
+            ],
+            [
+                B0, B1, B2,
+                B3, B4, B5,
+                L6, L7, L8
+            ],
+            [
+                L0, L1, L2,
+                L3, L4, L5,
+                F6, F7, F8
+            ],
+            [
+                T0, T1, T2,
+                T3, T4, T5,
+                T6, T7, T8
+            ],
+            [
+                D2, D5, D8,
+                D1, D4, D7,
+                D0, D3, D6
+            ]
+        ].
 
 
 % move_r_cw(cube, moves, updated_moves, rotated_cube)
 % Perform R move
-move_r_cw(C, M, [("R", RC)|M], RC) :-
-    cube_size(SIZE),
-    CI is SIZE - 1,
-    right(RIGHT_I),
-    rotate_cube_side_cw(C, RIGHT_I, RC_),
-    rotate_front_col_to_top(RC_, CI, RC).
+move_r_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("R", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, D2,
+                F3, F4, D5,
+                F6, F7, D8
+            ],
+            [
+                R6, R3, R0,
+                R7, R4, R1,
+                R8, R5, R2
+            ],
+            [
+                B0, B1, T2,
+                B3, B4, T5,
+                B6, B7, T8
+            ],
+            [
+                L0, L1, L2,
+                L3, L4, L5,
+                L6, L7, L8
+            ],
+            [
+                T0, T1, F2,
+                T3, T4, F5,
+                T6, T7, F8
+            ],
+            [
+                D0, D1, B2,
+                D3, D4, B5,
+                D6, D7, B8
+            ]
+        ].
+
 
 % move_r_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform R' move
-move_r_ccw(C, M, [("RC", RC)|M], RC) :-
-    cube_size(SIZE),
-    CI is SIZE - 1,
-    right(RIGHT_I),
-    rotate_cube_side_ccw(C, RIGHT_I, RC_),
-    rotate_front_col_to_bot(RC_, CI, RC).
+move_r_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("RC", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, T2,
+                F3, F4, T5,
+                F6, F7, T8
+            ],
+            [
+                R2, R5, R8,
+                R1, R4, R7,
+                R0, R3, R6
+            ],
+            [
+                B0, B1, D2,
+                B3, B4, D5,
+                B6, B7, D8
+            ],
+            [
+                L0, L1, L2,
+                L3, L4, L5,
+                L6, L7, L8
+            ],
+            [
+                T0, T1, B2,
+                T3, T4, B5,
+                T6, T7, B8
+            ],
+            [
+                D0, D1, F2,
+                D3, D4, F5,
+                D6, D7, F8
+            ]
+        ].
 
 
 % move_l_cw(cube, moves, updated_moves, rotated_cube)
 % Perform L move
-move_l_cw(C, M, [("L", RC)|M], RC) :-
-    left(LEFT_I),
-    rotate_cube_side_cw(C, LEFT_I, RC_),
-    rotate_front_col_to_bot(RC_, 0, RC).
+move_l_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("L", RC)|M], RC) :-
+        RC = [
+            [
+                T0, F1, F2,
+                T3, F4, F5,
+                T6, F7, F8
+            ],
+            [
+                R0, R1, R2,
+                R3, R4, R5,
+                R6, R7, R8
+            ],
+            [
+                D0, B1, B2,
+                D3, B4, B5,
+                D6, B7, B8
+            ],
+            [
+                L6, L3, L0,
+                L7, L4, L1,
+                L8, L5, L2
+            ],
+            [
+                B0, T1, T2,
+                B3, T4, T5,
+                B6, T7, T8
+            ],
+            [
+                F0, D1, D2,
+                F3, D4, D5,
+                F6, D7, D8
+            ]
+        ].
 
 % move_l_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform L' move
-move_l_ccw(C, M, [("LC", RC)|M], RC) :-
-    left(LEFT_I),
-    rotate_cube_side_ccw(C, LEFT_I, RC_),
-    rotate_front_col_to_top(RC_, 0, RC).
+move_l_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("", RC)|M], RC) :-
+        RC = [
+            [
+                D0, F1, F2,
+                D3, F4, F5,
+                D6, F7, F8
+            ],
+            [
+                R0, R1, R2,
+                R3, R4, R5,
+                R6, R7, R8
+            ],
+            [
+                T0, B1, B2,
+                T3, B4, B5,
+                T6, B7, B8
+            ],
+            [
+                L2, L5, L8,
+                L1, L4, L7,
+                L0, L3, L6
+            ],
+            [
+                F0, T1, T2,
+                F3, T4, T5,
+                F6, T7, T8
+            ],
+            [
+                B0, D1, D2,
+                B3, D4, D5,
+                B6, D7, D8
+            ]
+        ].
 
 
 % move_f_cw(cube, moves, updated_moves, rotated_cube)
 % Perform F move
-move_f_cw(C, M, [("F", RC)|M], RC) :-
-    front(FRONT_I),
-    rotate_cube_side_cw(C, FRONT_I, RC_),
-    rotate_side_col_to_bot(RC_, 0, RC).
+move_f_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("F", RC)|M], RC) :-
+        RC = [
+            [
+                F6, F3, F0,
+                F7, F4, F1,
+                F8, F5, F2
+            ],
+            [
+                T6, R1, R2,
+                T7, R4, R5,
+                T8, R7, R8
+            ],
+            [
+                B0, B1, B2,
+                B3, B4, B5,
+                B6, B7, B8
+            ],
+            [
+                L0, L1, D0,
+                L3, L4, D1,
+                L6, L7, D2
+            ],
+            [
+                T0, T1, T2,
+                T3, T4, T5,
+                L8, L5, L2
+            ],
+            [
+                R0, R3, R6,
+                D3, D4, D5,
+                D6, D7, D8
+            ]
+        ].
+
 
 % move_f_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform F' move
-move_f_ccw(C, M, [("FC", RC)|M], RC) :-
-    front(FRONT_I),
-    rotate_cube_side_ccw(C, FRONT_I, RC_),
-    rotate_side_col_to_top(RC_, 0, RC).
+move_f_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("FC", RC)|M], RC) :-
+        RC = [
+            [
+                F2, F5, F8,
+                F1, F4, F7,
+                F0, F3, F6
+            ],
+            [
+                D2, R1, R2,
+                D1, R4, R5,
+                D0, R7, R8
+            ],
+            [
+                B0, B1, B2,
+                B3, B4, B5,
+                B6, B7, B8
+            ],
+            [
+                L0, L1, T8,
+                L3, L4, T7,
+                L6, L7, T6
+            ],
+            [
+                T0, T1, T2,
+                T3, T4, T5,
+                R0, R3, R6
+            ],
+            [
+                L2, L5, L8,
+                D3, D4, D5,
+                D6, D7, D8
+            ]
+        ].
 
 
 % move_b_cw(cube, moves, updated_moves, rotated_cube)
 % Perform B move
-move_b_cw(C, M, [("B", RC)|M], RC) :-
-    cube_size(SIZE),
-    CI is SIZE - 1,
-    back(BACK_I),
-    rotate_cube_side_cw(C, BACK_I, RC_),
-    rotate_side_col_to_top(RC_, CI, RC).
+move_b_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("B", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                F3, F4, F5,
+                F6, F7, F8
+            ],
+            [
+                R0, R1, D8,
+                R3, R4, D7,
+                R6, R7, D6
+            ],
+            [
+                B6, B3, B0,
+                B7, B4, B1,
+                B8, B5, B2
+            ],
+            [
+                T2, L1, L2,
+                T1, L4, L5,
+                T0, L7, L8
+            ],
+            [
+                R2, R5, R8,
+                T3, T4, T5,
+                T6, T7, T8
+            ],
+            [
+                D0, D1, D2,
+                D3, D4, D5,
+                L0, L3, L6
+            ]
+        ].
 
 % move_b_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform B' move
-move_b_ccw(C, M, [("BC", RC)|M], RC) :-
-    cube_size(SIZE),
-    CI is SIZE - 1,
-    back(BACK_I),
-    rotate_cube_side_ccw(C, BACK_I, RC_),
-    rotate_side_col_to_bot(RC_, CI, RC).
+move_b_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("BC", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                F3, F4, F5,
+                F6, F7, F8
+            ],
+            [
+                R0, R1, T0,
+                R3, R4, T1,
+                R6, R7, T2
+            ],
+            [
+                B2, B5, B8,
+                B1, B4, B7,
+                B0, B3, B6
+            ],
+            [
+                D6, L1, L2,
+                D7, L4, L5,
+                D8, L7, L8
+            ],
+            [
+                L6, L3, L0,
+                T3, T4, T5,
+                T6, T7, T8
+            ],
+            [
+                D0, D1, D2,
+                D3, D4, D5,
+                R8, R5, R2
+            ]
+        ].
 
 
 % move_m_cw(cube, moves, updated_moves, rotated_cube)
 % Perform M move
-move_m_cw(C, M, [("M", RC)|M], RC) :-
-    cube_max_i(MAX_I),
-    CI is MAX_I div 2,
-    rotate_front_col_to_bot(C, CI, RC).
+move_m_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("M", RC)|M], RC) :-
+        RC = [
+            [
+                F0, T1, F2,
+                F3, T4, F5,
+                F6, T7, F8
+            ],
+            [
+                R0, R1, R2,
+                R3, R4, R5,
+                R6, R7, R8
+            ],
+            [
+                B0, D7, B2,
+                B3, D4, B5,
+                B6, D1, B8
+            ],
+            [
+                L0, L1, L2,
+                L3, L4, L5,
+                L6, L7, L8
+            ],
+            [
+                T0, B7, T2,
+                T3, B4, T5,
+                T6, B1, T8
+            ],
+            [
+                D0, F1, D2,
+                D3, F4, D5,
+                D6, F7, D8
+            ]
+        ].
 
 % move_m_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform M' move
-move_m_ccw(C, M, [("MC", RC)|M], RC) :-
-    cube_max_i(MAX_I),
-    CI is MAX_I div 2,
-    rotate_front_col_to_top(C, CI, RC).
+move_m_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("MC", RC)|M], RC) :-
+        RC = [
+            [
+                F0, D1, F2,
+                F3, D4, F5,
+                F6, D7, F8
+            ],
+            [
+                R0, R1, R2,
+                R3, R4, R5,
+                R6, R7, R8
+            ],
+            [
+                B0, T7, B2,
+                B3, T4, B5,
+                B6, T1, B8
+            ],
+            [
+                L0, L1, L2,
+                L3, L4, L5,
+                L6, L7, L8
+            ],
+            [
+                T0, F1, T2,
+                T3, F4, T5,
+                T6, F7, T8
+            ],
+            [
+                D0, B1, D2,
+                D3, B4, D5,
+                D6, B7, D8
+            ]
+        ].
 
 
 % move_e_cw(cube, moves, updated_moves, rotated_cube)
 % Perform E move
-move_e_cw(C, M, [("E", RC)|M], RC) :-
-    cube_max_i(MAX_I),
-    RI is MAX_I div 2,
-    rotate_hlevel_ccw(C, RI, RC).
+move_e_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("E", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                L3, L4, L5,
+                F6, F7, F8
+            ],
+            [
+                R0, R1, R2,
+                F3, F4, F5,
+                R6, R7, R8
+            ],
+            [
+                B0, B1, B2,
+                R3, R4, R5,
+                B6, B7, B8
+            ],
+            [
+                L0, L1, L2,
+                B3, B4, B5,
+                L6, L7, L8
+            ],
+            [
+                T0, T1, T2,
+                T3, T4, T5,
+                T6, T7, T8
+            ],
+            [
+                D0, D1, D2,
+                D3, D4, D5,
+                D6, D7, D8
+            ]
+        ].
 
 % move_e_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform E' move
-move_e_ccw(C, M, [("EC", RC)|M], RC) :-
-    cube_max_i(MAX_I),
-    RI is MAX_I div 2,
-    rotate_hlevel_cw(C, RI, RC).
+move_e_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("EC", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                R3, R4, R5,
+                F6, F7, F8
+            ],
+            [
+                R0, R1, R2,
+                B3, B4, B5,
+                R6, R7, R8
+            ],
+            [
+                B0, B1, B2,
+                L3, L4, L5,
+                B6, B7, B8
+            ],
+            [
+                L0, L1, L2,
+                F3, F4, F5,
+                L6, L7, L8
+            ],
+            [
+                T0, T1, T2,
+                T3, T4, T5,
+                T6, T7, T8
+            ],
+            [
+                D0, D1, D2,
+                D3, D4, D5,
+                D6, D7, D8
+            ]
+        ].
 
 
 % move_s_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform S move
-move_s_cw(C, M, [("S", RC)|M], RC) :-
-    cube_max_i(MAX_I),
-    CI is MAX_I div 2,
-    rotate_side_col_to_bot(C, CI, RC).
+move_s_cw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("S", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                F3, F4, F5,
+                F6, F7, F8
+            ],
+            [
+                R0, T3, R2,
+                R3, T4, R5,
+                R6, T5, R8
+            ],
+            [
+                B0, B1, B2,
+                B3, B4, B5,
+                B6, B7, B8
+            ],
+            [
+                L0, D5, L2,
+                L3, D4, L5,
+                L6, D3, L8
+            ],
+            [
+                T0, T1, T2,
+                L7, L4, L1,
+                T6, T7, T8
+            ],
+            [
+                D0, D1, D2,
+                R1, R4, R7,
+                D6, D7, D8
+            ]
+        ].
+
 
 % move_s_ccw(cube, moves, updated_moves, rotated_cube)
 % Perform S' move
-move_s_ccw(C, M, [("SC", RC)|M], RC) :-
-    cube_max_i(MAX_I),
-    CI is MAX_I div 2,
-    rotate_side_col_to_top(C, CI, RC).
+move_s_ccw(
+    [
+        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+    ],
+    M, [("SC", RC)|M], RC) :-
+        RC = [
+            [
+                F0, F1, F2,
+                F3, F4, F5,
+                F6, F7, F8
+            ],
+            [
+                R0, D3, R2,
+                R3, D4, R5,
+                R6, D5, R8
+            ],
+            [
+                B0, B1, B2,
+                B3, B4, B5,
+                B6, B7, B8
+            ],
+            [
+                L0, T5, L2,
+                L3, T4, L5,
+                L6, T3, L8
+            ],
+            [
+                T0, T1, T2,
+                R1, R4, R7,
+                T6, T7, T8
+            ],
+            [
+                D0, D1, D2,
+                L1, L4, L7,
+                D6, D7, D8
+            ]
+        ].
 
 
 % move_sq(move_fs, cube, moves, updated_moves, rotated_cube)
