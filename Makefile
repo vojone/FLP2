@@ -1,8 +1,8 @@
 all:
-	swipl  --stack_limit=16G --goal=main --stand_alone=true -o flp23-log -c solver.pl
+	swipl  --stack_limit=16g --goal=main --stand_alone=true -o flp23-log -c solver.pl
 
 zip:
-	zip -r xdvora3o.zip *.pl Makefile README.md tests/*
+	zip -r flp-log-xdvora3o.zip *.pl Makefile README.md tests/* test-moves.sh
 
 clean:
-	rm -f flp23-log xdvora3o.zip
+	rm -f flp23-log flp-log-xdvora3o.zip
