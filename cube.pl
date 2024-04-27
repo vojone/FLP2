@@ -200,25 +200,40 @@ write_cube([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
 
 
 
-/**               Clauses for checking the state of a cube                  **/
 
-side_color(_, []) :- !.
-side_color(COLOR, [COLOR|T]) :- side_color(COLOR, T).
+/**                         Clauses for performing moves                    **/
+
+% sign2move(move_sign, move_clause)
+% Translates signs of moves to clauses that actually perform the move
+sign2move("U", move_u_cw) :- !.
+sign2move("UC", move_u_ccw) :- !.
+sign2move("D", move_d_cw) :- !.
+sign2move("DC", move_d_ccw) :- !.
+sign2move("R", move_r_cw) :- !.
+sign2move("RC", move_r_ccw) :- !.
+sign2move("L", move_l_cw) :- !.
+sign2move("LC", move_l_ccw) :- !.
+sign2move("F", move_f_cw) :- !.
+sign2move("FC", move_f_ccw) :- !.
+sign2move("B", move_b_cw) :- !.
+sign2move("BC", move_b_ccw) :- !.
+sign2move("M", move_m_cw) :- !.
+sign2move("MC", move_m_ccw) :- !.
+sign2move("E", move_e_cw) :- !.
+sign2move("EC", move_e_ccw) :- !.
+sign2move("S", move_s_cw) :- !.
+sign2move("SC", move_s_ccw) :- !.
 
 
-cube_done([]) :- !. 
-cube_done([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
-    side_color(1, FRONT),
-    side_color(2, RIGHT),
-    side_color(3, BACK),
-    side_color(4, LEFT),
-    side_color(5, TOP),
-    side_color(6, BOT).
 
-
-
-
-/**                         Clauses for performing moves                    **/ 
+% All following clauses have this pattern:
+% <move_type>(cube, moves, new_moves, new_cube)
+%
+% where:
+% cube      rubik's cube list before the move
+% moves     list with moves before the move
+% new_moves list with moves after the move
+% new_cube  rubik's cube list after the move
 
 
 % Identity move (just template for creating the new moves)
@@ -1100,6 +1115,8 @@ move_seq([HMOVE|TMOVES], C, M, RM, RC) :-
     move_seq(TMOVES, RC_, RM_, RM, RC).
 
 
+
+% Mapping of move sequences for right, back and left sides: 
 front_right([], C, M, M, C).
 front_right([move_u_cw|TMOVES], C, M, RM, RC) :- move_u_cw(C, M, RM_, RC_), front_right(TMOVES, RC_, RM_, RM, RC).
 front_right([move_u_ccw|TMOVES], C, M, RM, RC) :- move_u_ccw(C, M, RM_, RC_), front_right(TMOVES, RC_, RM_, RM, RC).
