@@ -5,23 +5,34 @@
 * Implementation of moves with the rubikscube. All implemented
 * manipulations presumes that the following representation is used:
 * cube(C) :- C = [
-*     [1,1,1,1,1,1,1,1,1],
-*     [2,2,2,2,2,2,2,2,2],
-*     [3,3,3,3,3,3,3,3,3],
-*     [4,4,4,4,4,4,4,4,4],
-*     [5,5,5,5,5,5,5,5,5],
-*     [6,6,6,6,6,6,6,6,6]
+*     [F1,F2,F3,F4,F5,F3,F7,F8,F9],
+*     [R1,R2,R3,R4,R5,R3,R7,R8,R9],
+*     [B1,B2,B3,B4,B5,B3,B7,B8,B9],
+*     [L1,L2,L3,L4,L5,L3,L7,L8,L9],
+*     [T1,T2,T3,T4,T5,T3,T7,T8,T9],
+*     [D1,D2,D3,D4,D5,D3,D7,D8,D9]
 * ].
 *
-* (2D list, where the outer list represents the whole rubikscube and the inner
-* one represents individual sides of the cube)
+* T1 T2 T3
+* T4 T5 T6
+* T7 T8 T9
+* F1 F2 F3   R1 R2 R3   B1 B2 B3   L1 L2 L3
+* F4 F5 F6   R4 R5 R6   B4 B5 B6   L4 L5 L6  
+* F7 F8 F9   R7 R8 R9   B7 B8 B9   L7 L8 L9  
+* D1 D2 D3
+* D4 D5 D6
+* D7 D8 D9
 *
-* One of the main goals of implementation was to be general - allow
-* manipulation with 2x2, 4x4, 5x5 cubes
+* (2D list, where the outer dimension represents the whole rubik's cube and the
+* inner one represents individual sides of the cube)
+*
 *
 * Author: Vojtech Dvorak (xdvora3o)
 */
 
+
+
+/***         Some constants for printing and reading the cube              **/
 % Cube side size
 cube_size(3).
 
@@ -43,6 +54,7 @@ round_side_num(4).
 cube_max_i(I) :-
     cube_size(SIDE),
     I is SIDE - 1.
+
 
 
 /***         Clauses for reading a 3x3 cube from the stdin                  **/
@@ -98,7 +110,7 @@ skip_whitespace(L, NL) :-
 
 
 % lines2cube(line, line_remainder, cube)
-% Convert lines to the rubikscube
+% Convert lines to the rubik's cube
 lines2cube(L, I, NL, [SIDE]) :-
     round_side_num(ROUND_SIDE_NUM),
     I =:= ROUND_SIDE_NUM - 1, !,
@@ -112,18 +124,18 @@ lines2cube(L, I, NNNL, [SIDE|ST]) :-
     lines2cube(NNL, NI, NNNL, ST).
 
 lines2cube(L, REM, C) :-
-    lines2side(L, L_, TOP_SIDE),
-    pop_empty_lines(L_, NL),
-    lines2cube(NL, 0, NNL, SIDES),
+    lines2side(L, L_, TOP_SIDE), % Read top side first
+    pop_empty_lines(L_, NL), % Remove empty lines from list of lines
+    lines2cube(NL, 0, NNL, SIDES), % Read front, right, back and left side
     pop_empty_lines(NNL, NNNL),
-    lines2side(NNNL, NNNNL, BOT_SIDE),
+    lines2side(NNNL, NNNNL, BOT_SIDE), % Read bot side
     pop_empty_lines(NNNNL, REM),
     append(SIDES, [TOP_SIDE], C_),
     append(C_, [BOT_SIDE], C).
 
 
 % read_cube(result_cube, line_remainder)
-% Reads rubikscube from stdin in the followint format:
+% Reads rubikscube from stdin in the following format:
 % 555
 % 555
 % 555
@@ -204,10 +216,12 @@ cube_done([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
     side_color(6, BOT).
 
 
+
+
 /**                         Clauses for performing moves                    **/ 
 
 
-% Identity move
+% Identity move (just template for creating the new moves)
 move_id(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
@@ -217,7 +231,7 @@ move_id(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("", RC)|M], RC) :-
+    M, [""|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -262,7 +276,7 @@ move_u_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("U", RC)|M], RC) :-
+    M, ["U"|M], RC) :-
         RC = [
             [
                 R0, R1, R2,
@@ -308,7 +322,7 @@ move_u_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("UC", RC)|M], RC) :-
+    M, ["UC"|M], RC) :-
         RC = [
             [
                 L0, L1, L2,
@@ -356,7 +370,7 @@ move_d_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("D", RC)|M], RC) :-
+    M, ["D"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -403,7 +417,7 @@ move_d_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("DC", RC)|M], RC) :-
+    M, ["DC"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -449,7 +463,7 @@ move_r_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("R", RC)|M], RC) :-
+    M, ["R"|M], RC) :-
         RC = [
             [
                 F0, F1, D2,
@@ -477,9 +491,9 @@ move_r_cw(
                 T6, T7, F8
             ],
             [
-                D0, D1, B8,
-                D3, D4, B5,
-                D6, D7, B2
+                D0, D1, B6,
+                D3, D4, B3,
+                D6, D7, B0
             ]
         ].
 
@@ -495,7 +509,7 @@ move_r_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("RC", RC)|M], RC) :-
+    M, ["RC"|M], RC) :-
         RC = [
             [
                 F0, F1, T2,
@@ -518,9 +532,9 @@ move_r_ccw(
                 L6, L7, L8
             ],
             [
-                T0, T1, B2,
-                T3, T4, B5,
-                T6, T7, B8
+                T0, T1, B6,
+                T3, T4, B3,
+                T6, T7, B0
             ],
             [
                 D0, D1, F2,
@@ -541,7 +555,7 @@ move_l_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("L", RC)|M], RC) :-
+    M, ["L"|M], RC) :-
         RC = [
             [
                 T0, F1, F2,
@@ -632,7 +646,7 @@ move_f_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("F", RC)|M], RC) :-
+    M, ["F"|M], RC) :-
         RC = [
             [
                 F6, F3, F0,
@@ -678,7 +692,7 @@ move_f_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("FC", RC)|M], RC) :-
+    M, ["FC"|M], RC) :-
         RC = [
             [
                 F2, F5, F8,
@@ -724,7 +738,7 @@ move_b_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("B", RC)|M], RC) :-
+    M, ["B"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -769,7 +783,7 @@ move_b_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("BC", RC)|M], RC) :-
+    M, ["BC"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -815,7 +829,7 @@ move_m_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("M", RC)|M], RC) :-
+    M, ["M"|M], RC) :-
         RC = [
             [
                 F0, T1, F2,
@@ -860,7 +874,7 @@ move_m_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("MC", RC)|M], RC) :-
+    M, ["MC"|M], RC) :-
         RC = [
             [
                 F0, D1, F2,
@@ -906,7 +920,7 @@ move_e_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("E", RC)|M], RC) :-
+    M, ["E"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -951,7 +965,7 @@ move_e_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("EC", RC)|M], RC) :-
+    M, ["EC"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -997,7 +1011,7 @@ move_s_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("S", RC)|M], RC) :-
+    M, ["S"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -1043,7 +1057,7 @@ move_s_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, [("SC", RC)|M], RC) :-
+    M, ["SC"|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
