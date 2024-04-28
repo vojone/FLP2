@@ -109,9 +109,9 @@ write_solution(INITIAL_CUBE, MOVES, ARGV) :-
 solve(INIT_CUBE, MOVES, ARGV) :-
     % All cubes are solvable within 20 moves
     (
-        memberchk('-c', ARGV) -> % Choose solution with multithreading or without (multithreading is activated by default)
-            solve_ids(INIT_CUBE, is_cube_done, 20, MOVES);
-            solve_ids_concurrent(INIT_CUBE, is_cube_done, 20, MOVES)
+        memberchk('-t', ARGV) -> % Choose solution with multithreading or without (multithreading is deactivated by default)
+            solve_ids_concurrent(INIT_CUBE, is_cube_done, 20, MOVES);
+            solve_ids(INIT_CUBE, is_cube_done, 20, MOVES)
     ).
 
 
