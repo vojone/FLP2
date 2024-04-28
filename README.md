@@ -11,6 +11,8 @@ Vojtěch Dvořák (xdvora3o)
 ## Popis
 
 Jedná se o program v jazyce Prolog, který řeší instance Rubikovy kostky.
+Program očekává na vstupu Rubikovu kostku v zadáním předepsaném formátu (pro příklady viz níže nebo adresář `examples`) a na stadardní výstup vypíše posloupnost tahů vedoucí k jejímu vyřešení (složení).
+
 Interně je Rubikova kostka reprezentována pomocí dvojrozměrného seznamu o rozměrech 6 x 9 (6 stěn, z nichž každá má 9 barevných ploch).
 Položky, reprezantující barevné plochy jsou v seznamech rozloženy následujícím způsobem:
 
@@ -38,33 +40,84 @@ D7 D8 D9
 ```
 
 Program prohledává prostor řešení pomocí algoritmu IDS (iterativní prohledávání do hloubky), čímž je zajištěno, že program nalezne vždy optimální řešení.
-Ačkoliv bylo experimentováno i různými způsoby, jak prostor prořezat (např. kontrolou již navštívených stavů, zakázáním, některých sekvencí tahů apod.), tyto pokusy nevedly ke zlepšení a často naopak vnesly do algoritmu režii, která prohledávání více zpomalila. Prostor je definován osmnácti tahy specifikovanými v zadání (U, U', B, B', E, E', F, F', R, R', L, L', M, M', S, S', D, D'), které jsou implementovány v souboru `cube.pl` a jeden po druhém otestovány pomocí testovacího rámce, který je součástí odevzdaného archivu. 
+Prostor je definován osmnácti tahy specifikovanými v zadání (U, U', B, B', E, E', F, F', R, R', L, L', M, M', S, S', D, D'), které jsou implementovány v souboru `cube.pl` a otestovány pomocí testovacího skriptu, který je součástí odevzdaného archivu.
+
+Ačkoliv bylo experimentováno i různými způsoby, jak prostor prořezat (např. kontrolou již navštívených stavů, zakázáním, některých sekvencí tahů apod.), tyto pokusy nevedly ke zlepšení a často naopak vnesly do algoritmu režii, která prohledávání více zpomalila.
+Stejně tomu bylo i v případě většího množství dynamických predikátů (např. pokud byly použity pro kontrolu již navštívených tahů).
 
 ## Obsah odevzdaného archivu
 
-`tests` - Adresář s testovacími případy
+`tests` - Adresář s testovacími případy (pro jednotlivé tahy)
 
 `examples` - Adresář s instancemi Rubikovy kostky pro manuální testování/experimentování
 
-`cube.pl` - Klauzule realizující tahy
+`cube.pl` - Klauzule realizující jednotlivé tahy
 
 `ids_solver.pl` - Implementace IDS algoritmu
+
+`input2.pl` - Relevantní část zdrojového souboru `input2.pl` z informačního systému (kód v něm obsažený *není* mým dílem)
 
 `main.pl` - Hlavní tělo programu
 
 `Makefile` - Soubor pro program `make` s cíli pro překlad atd.
 
-`test-moves.sh` - Testovací rámec pro testování samostatných tahů
+`test-moves.sh` - Testovací skript pro testování jednotlivých tahů
 
 ## Překlad a spuštění
 
-Program přeložíme pomocí přiloženého programu `Makefile` a programu `make` (prerekvizitou je mít nainstalovaný program `swipl`):
+Program přeložíme pomocí přiloženého programu `Makefile` a programu `make` (prerekvizitou je mít nainstalovaný `swipl`):
 
 ```
 make
 ```
 
 
+Testy pro ověření funkčnosti jednotlivých tahů můžeme poté spustit pomocí:
+
+```
+make test
+```
+
+
+Přeložený program spustíme následujícím způsobem:
+```
+./flp23-log <examples/from_assignment.txt
+```
+
+```
+...
+
+555
+555
+555
+222 333 444 111
+111 222 333 444
+111 222 333 444
+666
+666
+666
+
+555
+555
+555
+111 222 333 444
+111 222 333 444
+111 222 333 444
+666
+666
+666
+```
+
 
 ## Příklady
+
+
+## Rozšíření
+
+V rámci projektu byla implementována i dvě rozšíření, která nejsou uvedena v zadání:
+
+*Podpora multithreadingu* - Pokud při spuštění programu použijeme přepínač `-t`, aktivujeme tíme prohledávání stavového prostoru pomocí více vláken (až 18 vláken). To může vést k značnému urychlení hledání řešení. Vícevláknová verze IDS je implementována pomocí `first_solution` a je ji možné nalézt ve zdrojovém souboru `ids_solver.pl`.
+
+*Výpis posloupnosti tahů* - Pokud použijeme při spuštění programu přepínač `-v`, program kromě stavů kostky během jeího řešení vypisuje také značky jednotlivých tahů (což je dobré pro ladění a případné složení fyzické Rubikovy kostky).
+
 
