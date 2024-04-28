@@ -1,15 +1,21 @@
 #!/bin/bash
 
+# flp23-log
+#
+# Testing script for Rubik's cube solver
+#
+# Author: Vojtěch Dvořák (xdvora3o)
+
 shopt -s extglob
 
-TEST_DIR="tests/moves/*"
+TEST_DIR="tests/moves/*" # Directory with tests
 
 for CASE in $TEST_DIR; do
     echo -n "$CASE: "
 
-    INPUT="$CASE/$(ls "$CASE" | grep ".*.in")"
-    TARGET="$CASE/$(ls "$CASE" | grep ".*.out")"
-    SCRIPT="$CASE/$(ls "$CASE" | grep ".*.pl")"
+    INPUT="$CASE/$(ls "$CASE" | grep ".*.in")" # Text file with initial cube
+    TARGET="$CASE/$(ls "$CASE" | grep ".*.out")" # Text file with expected cube
+    SCRIPT="$CASE/$(ls "$CASE" | grep ".*.pl")" # Prolog script for swipl
 
     if [ ! -f "$INPUT" ] || [ ! -f "$TARGET" ] || [ ! -f "$SCRIPT" ]; then
         echo "Incomplete test case!"

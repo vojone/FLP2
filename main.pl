@@ -14,17 +14,9 @@
 /**               Clauses for checking the state of a cube                  **/
 
 
-% side_color(color, cube)
-%
-% Checks if one side of the cube has specified color (all squares must have
-% the color)
-side_color(_, []) :- !.
-side_color(COLOR, [COLOR|T]) :- side_color(COLOR, T).
-
-
 % cube_done(cube)
 %
-% Check if cube is solved
+% Checks if cube is solved
 % Note: only this solution is accepted:
 % 555
 % 555
@@ -35,28 +27,12 @@ side_color(COLOR, [COLOR|T]) :- side_color(COLOR, T).
 % 666
 % 666
 % 666
-cube_done([]) :- !. 
-cube_done([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
-    side_color(1, FRONT),
-    side_color(2, RIGHT),
-    side_color(3, BACK),
-    side_color(4, LEFT),
-    side_color(5, TOP),
-    side_color(6, BOT).
+cube_done(C) :- done_cube(DONE_C), C = DONE_C.
 
 
-
-% Auxiliary clauses for testing
-
-cube_s(C) :- C = [
-        [2,2,2,1,1,1,4,4,4],
-        [3,3,3,2,2,2,1,1,1],
-        [4,4,4,3,3,3,2,2,2],
-        [1,1,1,4,4,4,3,3,3],
-        [5,5,5,5,5,5,5,5,5],
-        [6,6,6,6,6,6,6,6,6]
-    ].
-
+% done_cube(cube)
+%
+% Clause that returns solved cube
 done_cube(C) :- C = [
         [1,1,1,1,1,1,1,1,1],
         [2,2,2,2,2,2,2,2,2],
@@ -66,13 +42,8 @@ done_cube(C) :- C = [
         [6,6,6,6,6,6,6,6,6]
     ].
 
-scramble(C, SC) :-
-    move_seq([move_r_cw, move_s_cw, move_e_ccw], C, _, _, SC).
 
-% move_seq([move_r_cw, move_s_cw, move_e_ccw, move_d_ccw, move_d_ccw, move_b_cw, move_b_cw], C, _, _, SC). 15 min
-
-
-/**               Clauses for writign a solution to stdout                  **/
+/**               Clauses for writing a solution to stdout                  **/
 
 
 % write_moves_(moves)
