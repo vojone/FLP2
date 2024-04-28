@@ -43,7 +43,7 @@ ids_move(C, M, RM, RC) :-
 % Initial cube (cube) is rotated with moves and move signs are added to the
 % (moves). Updated moves are returned in updated moves. Iteration ends, if
 % cur_depth reaches the maximum depth or done_clause is satisfied.
-solve_ids_step(C, C, M, M, DONE_C, _, _) :- call(DONE_C, C), !. % If cube satisfies "done condition", stop and return the cube as the result 
+solve_ids_step(C, C, M, M, DONE_C, _, _) :- call(DONE_C, C), !. % If cube satisfies 'done condition', stop and return the cube as the result 
 solve_ids_step(_, _, _, _, _, D, MD) :-  D >= MD, !, false. % If current max depth is lower than current depth, stop with false
 solve_ids_step(C, RC, M, RM, DC, D, MD) :-
     ids_move(C, M, M_, RC_),

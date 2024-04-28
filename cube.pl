@@ -186,7 +186,7 @@ write_row(SIDE, RI) :- write_row(SIDE, RI, 0).
 % Write given to the stdout
 write_side(_, RI) :- cube_size(SIZE), RI >= SIZE, !. 
 write_side(SIDE, RI) :- cube_size(SIZE), RI < SIZE, !,
-    write_row(SIDE, RI), write("\n"), NRI is RI + 1, write_side(SIDE, NRI). 
+    write_row(SIDE, RI), write('\n'), NRI is RI + 1, write_side(SIDE, NRI). 
 write_side(SIDE) :- write_side(SIDE, 0).
 
 
@@ -196,10 +196,10 @@ write_side(SIDE) :- write_side(SIDE, 0).
 write_round_sides(_, RI) :- cube_size(SIZE), RI >= SIZE, !. 
 write_round_sides([FRONT, RIGHT, BACK, LEFT, _, _], RI) :-
     cube_size(SIZE), RI < SIZE, !, 
-    write_row(FRONT, RI), write(" "),
-    write_row(RIGHT, RI), write(" "),
-    write_row(BACK, RI), write(" "),
-    write_row(LEFT, RI), write("\n"),
+    write_row(FRONT, RI), write(' '),
+    write_row(RIGHT, RI), write(' '),
+    write_row(BACK, RI), write(' '),
+    write_row(LEFT, RI), write('\n'),
     NRI is RI + 1, write_round_sides([FRONT, RIGHT, BACK, LEFT, _, _], NRI). 
 write_round_sides(C) :- write_round_sides(C, 0).
 
@@ -221,24 +221,24 @@ write_cube([FRONT, RIGHT, BACK, LEFT, TOP, BOT]) :-
 % sign2move(move_sign, move_clause)
 %
 % Translates signs of moves to clauses that actually perform the move
-sign2move("U", move_u_cw) :- !.
-sign2move("UC", move_u_ccw) :- !.
-sign2move("D", move_d_cw) :- !.
-sign2move("DC", move_d_ccw) :- !.
-sign2move("R", move_r_cw) :- !.
-sign2move("RC", move_r_ccw) :- !.
-sign2move("L", move_l_cw) :- !.
-sign2move("LC", move_l_ccw) :- !.
-sign2move("F", move_f_cw) :- !.
-sign2move("FC", move_f_ccw) :- !.
-sign2move("B", move_b_cw) :- !.
-sign2move("BC", move_b_ccw) :- !.
-sign2move("M", move_m_cw) :- !.
-sign2move("MC", move_m_ccw) :- !.
-sign2move("E", move_e_cw) :- !.
-sign2move("EC", move_e_ccw) :- !.
-sign2move("S", move_s_cw) :- !.
-sign2move("SC", move_s_ccw) :- !.
+sign2move('U', move_u_cw) :- !.
+sign2move('UC', move_u_ccw) :- !.
+sign2move('D', move_d_cw) :- !.
+sign2move('DC', move_d_ccw) :- !.
+sign2move('R', move_r_cw) :- !.
+sign2move('RC', move_r_ccw) :- !.
+sign2move('L', move_l_cw) :- !.
+sign2move('LC', move_l_ccw) :- !.
+sign2move('F', move_f_cw) :- !.
+sign2move('FC', move_f_ccw) :- !.
+sign2move('B', move_b_cw) :- !.
+sign2move('BC', move_b_ccw) :- !.
+sign2move('M', move_m_cw) :- !.
+sign2move('MC', move_m_ccw) :- !.
+sign2move('E', move_e_cw) :- !.
+sign2move('EC', move_e_ccw) :- !.
+sign2move('S', move_s_cw) :- !.
+sign2move('SC', move_s_ccw) :- !.
 
 
 
@@ -264,7 +264,7 @@ move_u_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         BOT_SIDE % Bottom (down) side (unchanged)
     ],
-    M, ["U"|M], RC) :-
+    M, ['U'|M], RC) :-
         RC = [
             [
                 R0, R1, R2,
@@ -307,7 +307,7 @@ move_u_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         BOT_SIDE % Bottom (down) side
     ],
-    M, ["UC"|M], RC) :-
+    M, ['UC'|M], RC) :-
         RC = [
             [
                 L0, L1, L2,
@@ -350,7 +350,7 @@ move_d_cw(
         TOP_SIDE, % Top side (unchanged)
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["D"|M], RC) :-
+    M, ['D'|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -394,7 +394,7 @@ move_d_ccw(
         TOP_SIDE, % Top side (unchanged)
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["DC"|M], RC) :-
+    M, ['DC'|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -437,7 +437,7 @@ move_r_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["R"|M], RC) :-
+    M, ['R'|M], RC) :-
         RC = [
             [
                 F0, F1, D2,
@@ -480,7 +480,7 @@ move_r_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["RC"|M], RC) :-
+    M, ['RC'|M], RC) :-
         RC = [
             [
                 F0, F1, T2,
@@ -523,7 +523,7 @@ move_l_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["L"|M], RC) :-
+    M, ['L'|M], RC) :-
         RC = [
             [
                 T0, F1, F2,
@@ -565,7 +565,7 @@ move_l_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["LC"|M], RC) :-
+    M, ['LC'|M], RC) :-
         RC = [
             [
                 D0, F1, F2,
@@ -608,7 +608,7 @@ move_f_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["F"|M], RC) :-
+    M, ['F'|M], RC) :-
         RC = [
             [
                 F6, F3, F0,
@@ -651,7 +651,7 @@ move_f_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["FC"|M], RC) :-
+    M, ['FC'|M], RC) :-
         RC = [
             [
                 F2, F5, F8,
@@ -694,7 +694,7 @@ move_b_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["B"|M], RC) :-
+    M, ['B'|M], RC) :-
         RC = [
             FRONT_SIDE,
             [
@@ -736,7 +736,7 @@ move_b_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["BC"|M], RC) :-
+    M, ['BC'|M], RC) :-
         RC = [
             FRONT_SIDE,
             [
@@ -779,7 +779,7 @@ move_m_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["M"|M], RC) :-
+    M, ['M'|M], RC) :-
         RC = [
             [
                 F0, T1, F2,
@@ -817,7 +817,7 @@ move_m_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["MC"|M], RC) :-
+    M, ['MC'|M], RC) :-
         RC = [
             [
                 F0, D1, F2,
@@ -856,7 +856,7 @@ move_e_cw(
         TOP_SIDE, % Top side (unchanged)
         BOT_SIDE % Bottom (down) side (unchanged)
     ],
-    M, ["E"|M], RC) :-
+    M, ['E'|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -894,7 +894,7 @@ move_e_ccw(
         TOP_SIDE, % Top side (unchanged)
         BOT_SIDE % Bottom (down) side (unchanged)
     ],
-    M, ["EC"|M], RC) :-
+    M, ['EC'|M], RC) :-
         RC = [
             [
                 F0, F1, F2,
@@ -933,7 +933,7 @@ move_s_cw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["S"|M], RC) :-
+    M, ['S'|M], RC) :-
         RC = [
             FRONT_SIDE,
             [
@@ -972,7 +972,7 @@ move_s_ccw(
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
-    M, ["SC"|M], RC) :-
+    M, ['SC'|M], RC) :-
         RC = [
             FRONT_SIDE,
             [
