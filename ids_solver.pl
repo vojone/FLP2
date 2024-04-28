@@ -1,5 +1,5 @@
 /**
-* flp-23-log
+* flp23-log
 * ids_solver.pl
 *
 * Clauses for solving rubikscube by IDS method. Also contains multithreaded

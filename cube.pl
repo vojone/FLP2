@@ -1,5 +1,5 @@
 /**
-* flp-23-log
+* flp23-log
 * cube.pl
 *
 * Implementation of moves with the rubikscube. All implemented
@@ -113,28 +113,33 @@ skip_whitespace(L, NL) :-
     skip_whitespace(L, 0, NL).
 
 
-% lines2cube(line, line_remainder, cube)
+% lines2cube(line, side_counter, line_remainder, cube)
 %
-% Convert lines to the rubik's cube
-lines2cube(L, I, NL, [SIDE]) :-
+% Convert lines to the rubik's cube with side counter (to avoid
+% unexpected situations by inut in bad format)
+lines2cube(L, I, REM, [SIDE]) :-
     round_side_num(ROUND_SIDE_NUM),
     I =:= ROUND_SIDE_NUM - 1, !,
-    lines2side(L, NL, SIDE).
-lines2cube(L, I, NNNL, [SIDE|ST]) :-
+    lines2side(L, REM, SIDE).
+lines2cube(L, I, REM, [SIDE|ST]) :-
     round_side_num(ROUND_SIDE_NUM),
     I < ROUND_SIDE_NUM, !,
     NI is I + 1,
     lines2side(L, NL, SIDE),
     skip_whitespace(NL, NNL),
-    lines2cube(NNL, NI, NNNL, ST).
+    lines2cube(NNL, NI, REM, ST).
 
+
+% lines2cube(line, line_remainder, cube)
+%
+% Convert lines to the rubik's cube
 lines2cube(L, REM, C) :-
     lines2side(L, L_, TOP_SIDE), % Read top side first
-    pop_empty_lines(L_, NL), % Remove empty lines from list of lines
-    lines2cube(NL, 0, NNL, SIDES), % Read front, right, back and left side
-    pop_empty_lines(NNL, NNNL),
-    lines2side(NNNL, NNNNL, BOT_SIDE), % Read bot side
-    pop_empty_lines(NNNNL, REM),
+    pop_empty_lines(L_, TOP_REM), % Remove empty lines from list of lines
+    lines2cube(TOP_REM, 0, NNL, SIDES), % Read front, right, back and left side
+    pop_empty_lines(NNL, ROUND_SIDE_REM),
+    lines2side(ROUND_SIDE_REM, BOT_REM, BOT_SIDE), % Read bot side
+    pop_empty_lines(BOT_REM, REM),
     append(SIDES, [TOP_SIDE], C_),
     append(C_, [BOT_SIDE], C).
 
@@ -247,50 +252,6 @@ sign2move("SC", move_s_ccw) :- !.
 % new_cube  rubik's cube list after the move
 
 
-% Identity move (just template for creating the new moves)
-move_id(
-    [
-        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
-        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
-        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
-        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
-        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
-        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
-    ],
-    M, [""|M], RC) :-
-        RC = [
-            [
-                F0, F1, F2,
-                F3, F4, F5,
-                F6, F7, F8
-            ],
-            [
-                R0, R1, R2,
-                R3, R4, R5,
-                R6, R7, R8
-            ],
-            [
-                B0, B1, B2,
-                B3, B4, B5,
-                B6, B7, B8
-            ],
-            [
-                L0, L1, L2,
-                L3, L4, L5,
-                L6, L7, L8
-            ],
-            [
-                T0, T1, T2,
-                T3, T4, T5,
-                T6, T7, T8
-            ],
-            [
-                D0, D1, D2,
-                D3, D4, D5,
-                D6, D7, D8
-            ]
-        ].
-
 % move_u_cw(cube, moves, updated_moves, rotated_cube)
 %
 % Perform U move
@@ -301,7 +262,7 @@ move_u_cw(
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
-        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+        BOT_SIDE % Bottom (down) side (unchanged)
     ],
     M, ["U"|M], RC) :-
         RC = [
@@ -330,11 +291,7 @@ move_u_cw(
                 T7, T4, T1,
                 T8, T5, T2
             ],
-            [
-                D0, D1, D2,
-                D3, D4, D5,
-                D6, D7, D8
-            ]
+            BOT_SIDE
         ].
 
 
@@ -348,7 +305,7 @@ move_u_ccw(
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
-        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+        BOT_SIDE % Bottom (down) side
     ],
     M, ["UC"|M], RC) :-
         RC = [
@@ -377,11 +334,7 @@ move_u_ccw(
                 T1, T4, T7,
                 T0, T3, T6
             ],
-            [
-                D0, D1, D2,
-                D3, D4, D5,
-                D6, D7, D8
-            ]
+            BOT_SIDE
         ].
 
 
@@ -394,7 +347,7 @@ move_d_cw(
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
-        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        TOP_SIDE, % Top side (unchanged)
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
     M, ["D"|M], RC) :-
@@ -419,11 +372,7 @@ move_d_cw(
                 L3, L4, L5,
                 B6, B7, B8
             ],
-            [
-                T0, T1, T2,
-                T3, T4, T5,
-                T6, T7, T8
-            ],
+            TOP_SIDE,
             [
                 D6, D3, D0,
                 D7, D4, D1,
@@ -442,7 +391,7 @@ move_d_ccw(
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
-        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
+        TOP_SIDE, % Top side (unchanged)
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
     M, ["DC"|M], RC) :-
@@ -467,11 +416,7 @@ move_d_ccw(
                 L3, L4, L5,
                 F6, F7, F8
             ],
-            [
-                T0, T1, T2,
-                T3, T4, T5,
-                T6, T7, T8
-            ],
+            TOP_SIDE,
             [
                 D2, D5, D8,
                 D1, D4, D7,
@@ -488,7 +433,7 @@ move_r_cw(
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
-        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        LEFT_SIDE, % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
@@ -509,11 +454,7 @@ move_r_cw(
                 T5, B4, B5,
                 T2, B7, B8
             ],
-            [
-                L0, L1, L2,
-                L3, L4, L5,
-                L6, L7, L8
-            ],
+            LEFT_SIDE,
             [
                 T0, T1, F2,
                 T3, T4, F5,
@@ -535,7 +476,7 @@ move_r_ccw(
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
-        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        LEFT_SIDE, % Left side (unchanged)
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
@@ -556,11 +497,7 @@ move_r_ccw(
                 D5, B4, B5,
                 D2, B7, B8
             ],
-            [
-                L0, L1, L2,
-                L3, L4, L5,
-                L6, L7, L8
-            ],
+            LEFT_SIDE,
             [
                 T0, T1, B6,
                 T3, T4, B3,
@@ -580,7 +517,7 @@ move_r_ccw(
 move_l_cw(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
-        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        RIGHT_SIDE, % Right side (unchanged)
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
@@ -593,11 +530,7 @@ move_l_cw(
                 T3, F4, F5,
                 T6, F7, F8
             ],
-            [
-                R0, R1, R2,
-                R3, R4, R5,
-                R6, R7, R8
-            ],
+            RIGHT_SIDE,
             [
                 D0, B1, B2,
                 D3, B4, B5,
@@ -626,7 +559,7 @@ move_l_cw(
 move_l_ccw(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
-        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        RIGHT_SIDE, % Right side (unchanged)
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
@@ -639,11 +572,7 @@ move_l_ccw(
                 D3, F4, F5,
                 D6, F7, F8
             ],
-            [
-                R0, R1, R2,
-                R3, R4, R5,
-                R6, R7, R8
-            ],
+            RIGHT_SIDE,
             [
                 T0, B1, B2,
                 T3, B4, B5,
@@ -674,7 +603,7 @@ move_f_cw(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
-        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        BACK_SIDE, % Back side (unchanged)
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
@@ -691,11 +620,7 @@ move_f_cw(
                 T7, R4, R5,
                 T8, R7, R8
             ],
-            [
-                B0, B1, B2,
-                B3, B4, B5,
-                B6, B7, B8
-            ],
+            BACK_SIDE,
             [
                 L0, L1, D0,
                 L3, L4, D1,
@@ -721,7 +646,7 @@ move_f_ccw(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
-        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        BACK_SIDE, % Back side (unchanged)
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
@@ -738,11 +663,7 @@ move_f_ccw(
                 D1, R4, R5,
                 D0, R7, R8
             ],
-            [
-                B0, B1, B2,
-                B3, B4, B5,
-                B6, B7, B8
-            ],
+            BACK_SIDE,
             [
                 L0, L1, T8,
                 L3, L4, T7,
@@ -766,7 +687,7 @@ move_f_ccw(
 % Perform B move
 move_b_cw(
     [
-        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        FRONT_SIDE, % Front side (unchanged)
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
@@ -775,11 +696,7 @@ move_b_cw(
     ],
     M, ["B"|M], RC) :-
         RC = [
-            [
-                F0, F1, F2,
-                F3, F4, F5,
-                F6, F7, F8
-            ],
+            FRONT_SIDE,
             [
                 R0, R1, D8,
                 R3, R4, D7,
@@ -812,7 +729,7 @@ move_b_cw(
 % Perform B' move
 move_b_ccw(
     [
-        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        FRONT_SIDE, % Front side (unchanged)
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
@@ -821,11 +738,7 @@ move_b_ccw(
     ],
     M, ["BC"|M], RC) :-
         RC = [
-            [
-                F0, F1, F2,
-                F3, F4, F5,
-                F6, F7, F8
-            ],
+            FRONT_SIDE,
             [
                 R0, R1, T0,
                 R3, R4, T1,
@@ -860,9 +773,9 @@ move_b_ccw(
 move_m_cw(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
-        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        RIGHT_SIDE, % Right side (unchanged)
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
-        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        LEFT_SIDE, % Left side (unchanged)
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
@@ -873,21 +786,13 @@ move_m_cw(
                 F3, T4, F5,
                 F6, T7, F8
             ],
-            [
-                R0, R1, R2,
-                R3, R4, R5,
-                R6, R7, R8
-            ],
+            RIGHT_SIDE,
             [
                 B0, D7, B2,
                 B3, D4, B5,
                 B6, D1, B8
             ],
-            [
-                L0, L1, L2,
-                L3, L4, L5,
-                L6, L7, L8
-            ],
+            LEFT_SIDE,
             [
                 T0, B7, T2,
                 T3, B4, T5,
@@ -906,9 +811,9 @@ move_m_cw(
 move_m_ccw(
     [
         [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
-        [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
+        RIGHT_SIDE, % Right side (unchanged)
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
-        [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
+        LEFT_SIDE, % Left side (unchanged)
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
@@ -919,21 +824,13 @@ move_m_ccw(
                 F3, D4, F5,
                 F6, D7, F8
             ],
-            [
-                R0, R1, R2,
-                R3, R4, R5,
-                R6, R7, R8
-            ],
+            RIGHT_SIDE,
             [
                 B0, T7, B2,
                 B3, T4, B5,
                 B6, T1, B8
             ],
-            [
-                L0, L1, L2,
-                L3, L4, L5,
-                L6, L7, L8
-            ],
+            LEFT_SIDE,
             [
                 T0, F1, T2,
                 T3, F4, T5,
@@ -956,8 +853,8 @@ move_e_cw(
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
-        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
-        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+        TOP_SIDE, % Top side (unchanged)
+        BOT_SIDE % Bottom (down) side (unchanged)
     ],
     M, ["E"|M], RC) :-
         RC = [
@@ -981,16 +878,8 @@ move_e_cw(
                 B3, B4, B5,
                 L6, L7, L8
             ],
-            [
-                T0, T1, T2,
-                T3, T4, T5,
-                T6, T7, T8
-            ],
-            [
-                D0, D1, D2,
-                D3, D4, D5,
-                D6, D7, D8
-            ]
+            TOP_SIDE,
+            BOT_SIDE
         ].
 
 % move_e_ccw(cube, moves, updated_moves, rotated_cube)
@@ -1002,8 +891,8 @@ move_e_ccw(
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
         [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
-        [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
-        [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
+        TOP_SIDE, % Top side (unchanged)
+        BOT_SIDE % Bottom (down) side (unchanged)
     ],
     M, ["EC"|M], RC) :-
         RC = [
@@ -1027,16 +916,8 @@ move_e_ccw(
                 F3, F4, F5,
                 L6, L7, L8
             ],
-            [
-                T0, T1, T2,
-                T3, T4, T5,
-                T6, T7, T8
-            ],
-            [
-                D0, D1, D2,
-                D3, D4, D5,
-                D6, D7, D8
-            ]
+            TOP_SIDE,
+            BOT_SIDE
         ].
 
 
@@ -1045,30 +926,22 @@ move_e_ccw(
 % Perform S move
 move_s_cw(
     [
-        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        FRONT_SIDE, % Front side (unchanged)
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
-        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        BACK_SIDE, % Back side (unchanged)
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
     M, ["S"|M], RC) :-
         RC = [
-            [
-                F0, F1, F2,
-                F3, F4, F5,
-                F6, F7, F8
-            ],
+            FRONT_SIDE,
             [
                 R0, T3, R2,
                 R3, T4, R5,
                 R6, T5, R8
             ],
-            [
-                B0, B1, B2,
-                B3, B4, B5,
-                B6, B7, B8
-            ],
+            BACK_SIDE,
             [
                 L0, D3, L2,
                 L3, D4, L5,
@@ -1092,30 +965,22 @@ move_s_cw(
 % Perform S' move
 move_s_ccw(
     [
-        [F0, F1, F2, F3, F4, F5, F6, F7, F8], % Front side
+        FRONT_SIDE, % Front side (unchanged)
         [R0, R1, R2, R3, R4, R5, R6, R7, R8], % Right side
-        [B0, B1, B2, B3, B4, B5, B6, B7, B8], % Back side
+        BACK_SIDE, % Back side (unchanged)
         [L0, L1, L2, L3, L4, L5, L6, L7, L8], % Left side
         [T0, T1, T2, T3, T4, T5, T6, T7, T8], % Top side
         [D0, D1, D2, D3, D4, D5, D6, D7, D8] % Bottom (down) side
     ],
     M, ["SC"|M], RC) :-
         RC = [
-            [
-                F0, F1, F2,
-                F3, F4, F5,
-                F6, F7, F8
-            ],
+            FRONT_SIDE,
             [
                 R0, D5, R2,
                 R3, D4, R5,
                 R6, D3, R8
             ],
-            [
-                B0, B1, B2,
-                B3, B4, B5,
-                B6, B7, B8
-            ],
+            BACK_SIDE,
             [
                 L0, T5, L2,
                 L3, T4, L5,
@@ -1132,14 +997,4 @@ move_s_ccw(
                 D6, D7, D8
             ]
         ].
-
-
-% move_sq(move_fs, cube, moves, updated_moves, rotated_cube)
-%
-% Perform sequence of moves
-move_seq([], C, M, M, C).
-move_seq([HMOVE|TMOVES], C, M, RM, RC) :-
-    call(HMOVE, C, M, RM_, RC_),
-    move_seq(TMOVES, RC_, RM_, RM, RC).
-
 

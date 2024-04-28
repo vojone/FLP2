@@ -1,5 +1,5 @@
 /**
-* flp-23-log
+* flp23-log
 * input2.pl
 */
 

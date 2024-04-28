@@ -1,6 +1,6 @@
 /**
-* flp-23-log
-* solver.pl
+* flp23-log
+* main.pl
 *
 * The main body and arguments parsing of rubik's cube solver. 
 *
@@ -14,7 +14,7 @@
 /**               Clauses for checking the state of a cube                  **/
 
 
-% cube_done(cube)
+% is_cube_done(cube)
 %
 % Checks if cube is solved
 % Note: only this solution is accepted:
@@ -27,7 +27,7 @@
 % 666
 % 666
 % 666
-cube_done(C) :- done_cube(DONE_C), C = DONE_C.
+is_cube_done(C) :- done_cube(DONE_C), C = DONE_C.
 
 
 % done_cube(cube)
@@ -109,9 +109,9 @@ write_solution(INITIAL_CUBE, MOVES, ARGV) :-
 solve(INIT_CUBE, MOVES, ARGV) :-
     % All cubes are solvable within 20 moves
     (
-        memberchk('-c', ARGV) -> % Choose solution with multithreading or without
-            solve_ids_concurrent(INIT_CUBE, cube_done, 20, MOVES);
-            solve_ids(INIT_CUBE, cube_done, 20, MOVES)
+        memberchk('-t', ARGV) -> % Choose solution with multithreading or without
+            solve_ids_concurrent(INIT_CUBE, is_cube_done, 20, MOVES);
+            solve_ids(INIT_CUBE, is_cube_done, 20, MOVES)
     ).
 
 
