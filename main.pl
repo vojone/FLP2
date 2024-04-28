@@ -59,7 +59,7 @@ cube_s(C) :- C = [
 
 done_cube(C) :- C = [
         [1,1,1,1,1,1,1,1,1],
-        [2,8,2,2,2,2,2,2,2],
+        [2,2,2,2,2,2,2,2,2],
         [3,3,3,3,3,3,3,3,3],
         [4,4,4,4,4,4,4,4,4],
         [5,5,5,5,5,5,5,5,5],
@@ -67,7 +67,7 @@ done_cube(C) :- C = [
     ].
 
 scramble(C, SC) :-
-    move_seq([move_r_cw, move_s_cw, move_e_ccw, move_d_ccw, move_b_cw, move_b_cw], C, _, _, SC).
+    move_seq([move_r_cw, move_s_cw, move_e_ccw], C, _, _, SC).
 
 % move_seq([move_r_cw, move_s_cw, move_e_ccw, move_d_ccw, move_d_ccw, move_b_cw, move_b_cw], C, _, _, SC). 15 min
 
@@ -134,15 +134,20 @@ write_solution(INITIAL_CUBE, MOVES, ARGV) :-
 
 % solve(intial_cube, moves)
 %
-% Treíes to solve the cube and return (reversed) sequence of moves
-solve(INIT_CUBE, MOVES) :-
-    solve_ids(INIT_CUBE, cube_done, 5, MOVES). % All cubes are solvable until 20 moves
+% Tries to solve the cube and returns (reversed) sequence of moves
+solve(INIT_CUBE, MOVES, ARGV) :-
+    % All cubes are solvable within 20 moves
+    (
+        memberchk('-c', ARGV) -> % Choose solution with multithreading or without
+            solve_ids_concurrent(INIT_CUBE, cube_done, 20, MOVES);
+            solve_ids(INIT_CUBE, cube_done, 20, MOVES)
+    ).
 
 
 % Main body
 main(ARGV) :-
     read_cube(CUBE, _), % Read the cube from stdin and ignore remainding lines
-    solve(CUBE, MOVES), % Solve cube
+    solve(CUBE, MOVES, ARGV), % Solve cube
     write_solution(CUBE, MOVES, ARGV), % Print solution (with or without moves)
     (
         memberchk('-v', ARGV) -> 

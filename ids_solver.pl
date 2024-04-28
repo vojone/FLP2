@@ -2,22 +2,14 @@
 * flp-23-log
 * ids_solver.pl
 *
-* Clauses for solving rubikscube by IDS method.
+* Clauses for solving rubikscube by IDS method. Also contains multithreaded
+* version of IDS, that uses up to 18 threads to speed up the searching.
 *
 * Author: Vojtech Dvorak (xdvora3o)
 */
 
 :- consult("cube").
 
-:- dynamic(ids_state_/1).
-
-
-check_ids_state(C) :- ids_state_(C), !, false.
-check_ids_state(_).
-
-save_ids_state(C) :- asserta(ids_state_(C)).
-remove_ids_state(C) :- retract(ids_state_(C)).
-clear_ids_states :- retractall(ids_state_(_)).
 
 % ids_move(cube, move, updated_move, updated_cube)
 %
@@ -67,3 +59,59 @@ solve_ids(C, RM, DONE_C, D, MD) :- D < MD, ND is D + 1, solve_ids(C, RM, DONE_C,
 % reversed sequence of moves, that leads to the solution specified by the 
 % done_clause
 solve_ids(C, DONE_CLAUSE, MD, RM) :- solve_ids(C, RM, DONE_CLAUSE, 0, MD).
+
+
+/**                              Multithreaded                              **/
+
+
+% solve_ids_c_(initial_cube, done_clause, max_depth, first_move, result)
+%
+% Auxiliary clause for multithreaded IDS - it performs the first move and then
+solve_ids_c_(C, DONE_C, D, MOVE, RM) :-
+    call(MOVE, C, [], M_, RC),
+    ND is D - 1,
+    solve_ids_step(RC, _, M_, RM, DONE_C, 0, ND).
+
+
+% solve_ids_concurrent_(initial_cube, move_seq, done_clause, current_depth, max_depth)
+%
+% One step of IDS executed with multiple threads
+solve_ids_concurrent_(C, RM, DONE_CLAUSE, D, _) :- D =< 1, solve_ids(C, RM, DONE_CLAUSE, 0, 1), !. % Try the first step with only one thread
+solve_ids_concurrent_(C, RM, DONE_CLAUSE, D, _) :- D > 1,
+    first_solution(
+        RM,
+        [
+            solve_ids_c_(C, DONE_CLAUSE, D, move_u_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_u_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_d_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_d_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_f_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_f_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_r_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_r_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_l_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_l_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_b_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_b_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_e_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_e_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_m_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_m_ccw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_s_cw, RM),
+            solve_ids_c_(C, DONE_CLAUSE, D, move_s_ccw, RM)
+        ],
+    [on_fail(continue)]). % Wait for all threads (they may find a solution)
+
+
+% solve_ids_concurrent(initial_cube, move_seq, done_clause, current_depth, max_depth)
+%
+% IDS algorithm that uses multithreading
+solve_ids_concurrent(C, RM, DONE_C, D, MD) :- solve_ids_concurrent_(C, RM, DONE_C, D, MD), !.
+% Increase current depth and repeat
+solve_ids_concurrent(C, RM, DONE_C, D, MD) :- D < MD, ND is D + 1, solve_ids_concurrent(C, RM, DONE_C, ND, MD).
+
+
+% solve_ids_concurrent(initial_cube, done_clause, max_depth, move_seq)
+%
+% Same as solve_ids_concurrent/4, but more convenient
+solve_ids_concurrent(C, DONE_C, MD, RM) :- solve_ids_concurrent(C, RM, DONE_C, 0, MD).
