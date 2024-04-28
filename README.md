@@ -12,9 +12,10 @@ Vojtěch Dvořák (xdvora3o)
 
 Jedná se o program v jazyce Prolog, který řeší instance Rubikovy kostky.
 Program očekává na vstupu Rubikovu kostku v zadáním předepsaném formátu (pro příklady viz níže nebo adresář `examples`) a na stadardní výstup vypíše posloupnost tahů vedoucí k jejímu vyřešení (složení).
+Program rovněž kontroluje syntaktickou správnost formátu vstupu (zda každá strana obsahuje správný počet hodnot apod.) a pokud se mu nepodaří vstup zpracovat, vypíše chybové hlášení (viz příklady).
 
 Interně je Rubikova kostka reprezentována pomocí dvojrozměrného seznamu o rozměrech 6 x 9 (6 stěn, z nichž každá má 9 barevných ploch).
-Položky, reprezantující barevné plochy jsou v seznamech rozloženy následujícím způsobem:
+Položky, reprezentující barevné plochy jsou v seznamech rozloženy následujícím způsobem:
 
 ```
 [
@@ -51,7 +52,7 @@ Stejně tomu bylo i v případě většího množství dynamických predikátů 
 
 `examples` - Adresář s instancemi Rubikovy kostky pro manuální testování/experimentování
 
-`cube.pl` - Klauzule realizující jednotlivé tahy
+`cube.pl` - Implementace tahů a čtení Rubikovy kostky ze vstupu
 
 `ids_solver.pl` - Implementace IDS algoritmu
 
@@ -59,7 +60,7 @@ Stejně tomu bylo i v případě většího množství dynamických predikátů 
 
 `main.pl` - Hlavní tělo programu
 
-`Makefile` - Soubor pro program `make` s cíli pro překlad atd.
+`Makefile` - Soubor pro program `make` s cíli pro překlad, testování atd.
 
 `test-moves.sh` - Testovací skript pro testování jednotlivých tahů
 
@@ -67,11 +68,29 @@ Stejně tomu bylo i v případě většího množství dynamických predikátů 
 
 V rámci projektu byla implementována i dvě rozšíření, která nejsou uvedena v zadání:
 
-*Podpora multithreadingu* - Program ve výchozím nastavení používá vícevláknové zpracování pro urychlení prohledávání stavového prostoru kostky (až 18 vláken). Pokud při spuštění programu použijeme přepínač `-c`, **deaktivujeme** tím prohledávání stavového prostoru pomocí více vláken. Vícevláknová verze IDS je implementována pomocí `first_solution` a je ji možné nalézt ve zdrojovém souboru `ids_solver.pl`.
+*Podpora multithreadingu* - Možnost aktivovat vícevláknové zpracování pro urychlení prohledávání stavového prostoru kostky (až 18 vláken). Pokud při spuštění programu použijeme přepínač `-t`, **aktivujeme** prohledávání stavového prostoru pomocí více vláken. Vícevláknová verze IDS je implementována pomocí `first_solution` a je ji možné nalézt ve zdrojovém souboru `ids_solver.pl`. Např. při spuštění programu nad souborem `examples/6moves.txt` můžeme pozorovat výrazné zrychlení:
 
+    ```
+    time ./flp23-log -t <examples/6moves.txt
+    ```
+    
+    ```
+    ...
+    real    0m8.212s
+    ...
     ```
 
     ```
+    time ./flp23-log <examples/6moves.txt
+    ```
+
+    ```
+    ...
+    real    0m45.175s
+    ...
+    ```
+
+    Ve výchozím stavu je však multithreading deaktivován, neboť při testování na serveru Merlin docházelo k vyčerpání limitu procesorového času (řešení je sice nalezeno rychleji, nicméně efektivita je nižší a bylo tedy snazší limit vyčerpat). 
 
 *Výpis posloupnosti tahů* - Pokud použijeme při spuštění programu přepínač `-v`, program kromě stavů kostky během jeího řešení vypisuje také značky jednotlivých tahů (což je dobré pro ladění a případné složení fyzické Rubikovy kostky).
 
@@ -124,6 +143,46 @@ Přeložený program spustíme následujícím způsobem:
 
 ## Příklady
 
+Příklady jsou umistěny v adresáři `examples`.
 
+Pomocí `input_error.txt` můžeme otestovat reakci na nevalidní vstup:
+
+```
+./flp23-log <examples/input_error.txt
+```
+```
+flp23-log: Error: Invalid input!
+```
+
+Další soubory obsahují instance rozmíchané Rubikovy kostky (`1moves.txt` jeden tak od složení, `2moves.txt` dva tahy od složení apod.).
+Časy řešení vybraných (složitějších) úloh a příkladové plohy ze zadání jsou přibližně následující (měřeno na serveru Merlin pomocí nástroje `time` s deaktivovaným multithreadingem):
+
+`examples/from_assignment.txt`
+```
+real    0m0.015s
+user    0m0.010s
+sys     0m0.003s
+```
+
+`examples/5moves.txt`
+```
+real    0m3.427s
+user    0m3.262s
+sys     0m0.163s
+```
+
+`examples/6moves.txt`
+```
+real    0m47.025s
+user    0m44.643s
+sys     0m2.397s
+```
+
+`examples/7moves.txt`
+```
+real    9m1.381s
+user    8m47.925s
+sys     0m13.389s
+```
 
 
