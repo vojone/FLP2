@@ -4,7 +4,7 @@
  * (not submitted)
  */
 
-:- consult('main').
+:- consult(main).
 
 % move_sq(move_fs, cube, moves, updated_moves, rotated_cube)
 %

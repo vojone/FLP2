@@ -58,7 +58,7 @@ cube_max_i(I) :-
 
 
 /***         Clauses for reading a 3x3 cube from the stdin                  **/
-:- consult("input2").
+:- consult(input2).
 
 
 % line2row(inline, line_remainder, row)

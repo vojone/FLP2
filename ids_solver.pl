@@ -8,7 +8,7 @@
 * Author: Vojtech Dvorak (xdvora3o)
 */
 
-:- consult("cube").
+:- consult(cube).
 
 
 % ids_move(cube, move, updated_move, updated_cube)

@@ -42,7 +42,7 @@ D7 D8 D9
 Program prohledává prostor řešení pomocí algoritmu IDS (iterativní prohledávání do hloubky), čímž je zajištěno, že program nalezne vždy optimální řešení.
 Prostor je definován osmnácti tahy specifikovanými v zadání (U, U', B, B', E, E', F, F', R, R', L, L', M, M', S, S', D, D'), které jsou implementovány v souboru `cube.pl` a otestovány pomocí testovacího skriptu, který je součástí odevzdaného archivu.
 
-Ačkoliv bylo experimentováno i různými způsoby, jak prostor prořezat (např. kontrolou již navštívených stavů, zakázáním, některých sekvencí tahů apod.), tyto pokusy nevedly ke zlepšení a často naopak vnesly do algoritmu režii, která prohledávání více zpomalila.
+Ačkoliv bylo experimentováno i různými způsoby, jak prostor prořezat (např. kontrolou již navštívených stavů, zakázáním, některých sekvencí tahů apod.), tyto pokusy nevedly ke zlepšení a často naopak vnesly do algoritmu režii (např. velký počet porovnávání stavů kostky), která prohledávání více zpomalila.
 Stejně tomu bylo i v případě většího množství dynamických predikátů (např. pokud byly použity pro kontrolu již navštívených tahů).
 
 ## Obsah odevzdaného archivu
@@ -62,6 +62,19 @@ Stejně tomu bylo i v případě většího množství dynamických predikátů 
 `Makefile` - Soubor pro program `make` s cíli pro překlad atd.
 
 `test-moves.sh` - Testovací skript pro testování jednotlivých tahů
+
+## Rozšíření
+
+V rámci projektu byla implementována i dvě rozšíření, která nejsou uvedena v zadání:
+
+*Podpora multithreadingu* - Program ve výchozím nastavení používá vícevláknové zpracování pro urychlení prohledávání stavového prostoru kostky (až 18 vláken). Pokud při spuštění programu použijeme přepínač `-c`, **deaktivujeme** tím prohledávání stavového prostoru pomocí více vláken. Vícevláknová verze IDS je implementována pomocí `first_solution` a je ji možné nalézt ve zdrojovém souboru `ids_solver.pl`.
+
+    ```
+
+    ```
+
+*Výpis posloupnosti tahů* - Pokud použijeme při spuštění programu přepínač `-v`, program kromě stavů kostky během jeího řešení vypisuje také značky jednotlivých tahů (což je dobré pro ladění a případné složení fyzické Rubikovy kostky).
+
 
 ## Překlad a spuštění
 
@@ -112,12 +125,5 @@ Přeložený program spustíme následujícím způsobem:
 ## Příklady
 
 
-## Rozšíření
-
-V rámci projektu byla implementována i dvě rozšíření, která nejsou uvedena v zadání:
-
-*Podpora multithreadingu* - Pokud při spuštění programu použijeme přepínač `-t`, aktivujeme tíme prohledávání stavového prostoru pomocí více vláken (až 18 vláken). To může vést k značnému urychlení hledání řešení. Vícevláknová verze IDS je implementována pomocí `first_solution` a je ji možné nalézt ve zdrojovém souboru `ids_solver.pl`.
-
-*Výpis posloupnosti tahů* - Pokud použijeme při spuštění programu přepínač `-v`, program kromě stavů kostky během jeího řešení vypisuje také značky jednotlivých tahů (což je dobré pro ladění a případné složení fyzické Rubikovy kostky).
 
 

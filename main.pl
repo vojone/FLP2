@@ -7,8 +7,9 @@
 * Author: Vojtech Dvorak (xdvora3o)
 */
 
-:- consult("cube").
-:- consult("ids_solver").
+:- consult(cube).
+:- consult(ids_solver).
+:- prompt(_, '').
 
 
 /**               Clauses for checking the state of a cube                  **/
@@ -109,9 +110,9 @@ write_solution(INITIAL_CUBE, MOVES, ARGV) :-
 solve(INIT_CUBE, MOVES, ARGV) :-
     % All cubes are solvable within 20 moves
     (
-        memberchk('-t', ARGV) -> % Choose solution with multithreading or without
-            solve_ids_concurrent(INIT_CUBE, is_cube_done, 20, MOVES);
-            solve_ids(INIT_CUBE, is_cube_done, 20, MOVES)
+        memberchk('-c', ARGV) -> % Choose solution with multithreading or without (multithreading is activated by default)
+            solve_ids(INIT_CUBE, is_cube_done, 20, MOVES);
+            solve_ids_concurrent(INIT_CUBE, is_cube_done, 20, MOVES)
     ).
 
 
